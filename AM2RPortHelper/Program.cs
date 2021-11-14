@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace AM2RPortHelper
@@ -46,7 +47,7 @@ namespace AM2RPortHelper
             }
 
             Console.WriteLine("Successfully finished!");
-            Console.WriteLine("**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**");
+            Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
             Console.WriteLine("Exiting in 5 seconds...");
             Thread.Sleep(5000);
         }
@@ -103,8 +104,13 @@ namespace AM2RPortHelper
             string apkDir = extractDirectory + "/apk";
             string apkAssetsDir = apkDir + "/assets";
             string currentDir = Directory.GetCurrentDirectory();
+            string bin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "java";
+            string args = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/C java -jar " : "-jar ";
+            string apktool = currentDir + "/utils/apktool.jar";
+            string signer = currentDir + "/utils/uber-apk-signer.jar";
             string finalApkBuild = extractDirectory + "/build-aligned-debugSigned.apk";
             string apkModPath = currentDir + "/" + Path.GetFileNameWithoutExtension(modZipPath.FullName) + "_ANDROID.apk";
+
 
             // Check if temp folder exists, delete if yes, extract zip to there
             if (Directory.Exists(extractDirectory))
@@ -117,8 +123,8 @@ namespace AM2RPortHelper
             // Run APKTOOL and decompress the file
             ProcessStartInfo pStartInfo = new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = "/C java -jar \"" + currentDir + "/utils/apktool.jar\" d -f -o \"" + apkDir + "\" \"" + currentDir + "/utils/AM2RWrapper.apk" + "\"",
+                FileName = bin,
+                Arguments = args + "\"" + apktool + "\" d -f -o \"" + apkDir + "\" \"" + currentDir + "/utils/AM2RWrapper.apk" + "\"",
                 CreateNoWindow = true
             };
             Process p = new Process() { StartInfo = pStartInfo };
@@ -150,8 +156,8 @@ namespace AM2RPortHelper
             //TODO: MAKE CROSS PLATFORM
             pStartInfo = new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = "/C java -jar \"" + currentDir + "/utils/apktool.jar\" b \"" + apkDir + "\" -o \"" + extractDirectory + "/build.apk" + "\"",
+                FileName = bin,
+                Arguments = args + "\"" + apktool + "\" b \"" + apkDir + "\" -o \"" + extractDirectory + "/build.apk" + "\"",
                 CreateNoWindow = true
             };
             p = new Process() { StartInfo = pStartInfo };
@@ -162,8 +168,8 @@ namespace AM2RPortHelper
             // Sign the apk
             pStartInfo = new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = "/C java -jar \"" + currentDir + "/utils/uber-apk-signer.jar\" -a \"" + extractDirectory + "/build.apk" + "\"",
+                FileName = bin,
+                Arguments = args + "\"" + signer + "\" -a \"" + extractDirectory + "/build.apk" + "\"",
                 CreateNoWindow = true
             };
             p = new Process() { StartInfo = pStartInfo };
