@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AM2RPortHelper": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Narr\\Desktop\\AM2R History Archive\\Official Releases\\(16-08-15) AM2R v1.1.zip\""
+    }
+  }
+}
