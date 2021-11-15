@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -9,9 +10,9 @@ namespace AM2RPortHelper
 {
     class Program
     {
-        static string version = "1.0";
+        static string version = "1.1";
         static string tmp = Path.GetTempPath();
-        static string currentDir = Directory.GetCurrentDirectory();
+        static string currentDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
         static string utilDir = currentDir + "/utils";
 
         static void Main(string[] args)
@@ -46,8 +47,6 @@ namespace AM2RPortHelper
                 default: Console.WriteLine("Unacceptable input. Aborting..."); return;
             }
 
-            Console.WriteLine("Successfully finished!");
-            Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
             Console.WriteLine("Exiting in 5 seconds...");
             Thread.Sleep(5000);
         }
@@ -79,8 +78,10 @@ namespace AM2RPortHelper
             File.Delete(assetsDir + "/D3DX9_43.dll");
             File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
             File.Copy(utilDir + "/runner", extractDirectory + "/runner");
-            File.Copy(utilDir + "/icon.png", assetsDir + "/icon.png");
-            File.Copy(utilDir + "/splash.png", assetsDir + "/splash.png");
+            if (!File.Exists(assetsDir + "/icon.png"))
+                File.Copy(utilDir + "/icon.png", assetsDir + "/icon.png");
+            if (!File.Exists(assetsDir + "/splash.png"))
+                File.Copy(utilDir + "/splash.png", assetsDir + "/splash.png");
 
             //recursively lowercase everything in the assets folder
             LowercaseFolder(assetsDir);
@@ -95,6 +96,8 @@ namespace AM2RPortHelper
 
             // Clean up
             Directory.Delete(assetsDir, true);
+
+            Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
         }
 
         static void PortForAndroid(FileInfo modZipPath)
@@ -103,7 +106,6 @@ namespace AM2RPortHelper
             string unzipDir = extractDirectory + "/zip";
             string apkDir = extractDirectory + "/apk";
             string apkAssetsDir = apkDir + "/assets";
-            string currentDir = Directory.GetCurrentDirectory();
             string bin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "java";
             string args = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/C java -jar " : "-jar ";
             string apktool = currentDir + "/utils/apktool.jar";
@@ -117,8 +119,6 @@ namespace AM2RPortHelper
                 Directory.Delete(extractDirectory, true);
             Directory.CreateDirectory(extractDirectory);
             ZipFile.ExtractToDirectory(modZipPath.FullName, unzipDir);
-
-            //TODO: MAKE CROSS PLATFORM
 
             // Run APKTOOL and decompress the file
             ProcessStartInfo pStartInfo = new ProcessStartInfo
@@ -153,7 +153,6 @@ namespace AM2RPortHelper
             File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
 
             // Run APKTOOL and build the apk
-            //TODO: MAKE CROSS PLATFORM
             pStartInfo = new ProcessStartInfo
             {
                 FileName = bin,
@@ -164,7 +163,6 @@ namespace AM2RPortHelper
             p.Start();
             p.WaitForExit();
 
-            //TODO: MAKE CROSS PLATFORM
             // Sign the apk
             pStartInfo = new ProcessStartInfo
             {
@@ -186,6 +184,9 @@ namespace AM2RPortHelper
 
             // Clean up
             Directory.Delete(extractDirectory, true);
+
+            Console.WriteLine("Successfully finished!");
+            Console.WriteLine("\n**This will currently use default splashes and icons, if you don't like them don't forget to replace them in the apk**\n");
         }
 
         static void LowercaseFolder(string directory)
