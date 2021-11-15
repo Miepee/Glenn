@@ -10,9 +10,9 @@ namespace AM2RPortHelper
 {
     class Program
     {
-        static string version = "1.1";
+        static string version = "1.2";
         static string tmp = Path.GetTempPath();
-        static string currentDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        static string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
         static string utilDir = currentDir + "/utils";
 
         static void Main(string[] args)
@@ -60,9 +60,11 @@ namespace AM2RPortHelper
             // Check if temp folder exists, delete if yes, extract zip to there
             if (Directory.Exists(extractDirectory))
                 Directory.Delete(extractDirectory, true);
+            Console.WriteLine("Extracting...");
             ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory, true);
 
             // Move everything into assets folder
+            Console.WriteLine("Moving into assets folder...");
             Directory.CreateDirectory(assetsDir);
             foreach (var file in new DirectoryInfo(extractDirectory).GetFiles())
                 file.MoveTo(assetsDir + "/" + file.Name);
@@ -74,6 +76,7 @@ namespace AM2RPortHelper
             }
 
             // Delete unnecessary files, rename data.win, move in the new runner
+            Console.WriteLine("Delete unnecesary files and lowercase them...");
             File.Delete(assetsDir + "/AM2R.exe");
             File.Delete(assetsDir + "/D3DX9_43.dll");
             File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
@@ -92,11 +95,13 @@ namespace AM2RPortHelper
                 Console.WriteLine(linuxModPath + " already exists! Please move it somewhere else.");
                 return;
             }
+            Console.WriteLine("Creating zip...");
             ZipFile.CreateFromDirectory(extractDirectory, linuxModPath);
 
             // Clean up
             Directory.Delete(assetsDir, true);
 
+            Console.WriteLine("Successfully finished!");
             Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
         }
 
@@ -118,9 +123,11 @@ namespace AM2RPortHelper
             if (Directory.Exists(extractDirectory))
                 Directory.Delete(extractDirectory, true);
             Directory.CreateDirectory(extractDirectory);
+            Console.WriteLine("Extracting...");
             ZipFile.ExtractToDirectory(modZipPath.FullName, unzipDir);
 
             // Run APKTOOL and decompress the file
+            Console.WriteLine("Decompiling apk...");
             ProcessStartInfo pStartInfo = new ProcessStartInfo
             {
                 FileName = bin,
@@ -130,9 +137,10 @@ namespace AM2RPortHelper
             Process p = new Process() { StartInfo = pStartInfo };
             p.Start();
             p.WaitForExit();
-            
+
 
             // Move everything into assets folder
+            Console.WriteLine("Move into assets folder...");
             foreach (var file in new DirectoryInfo(unzipDir).GetFiles())
                 file.MoveTo(apkAssetsDir + "/" + file.Name);
 
@@ -142,10 +150,14 @@ namespace AM2RPortHelper
             }
 
             // Delete unnecessary files, rename data.win, move in the new runner
+            Console.WriteLine("Delete unnecessary files and lowercase them...");
             File.Delete(apkAssetsDir + "/AM2R.exe");
             File.Delete(apkAssetsDir + "/D3DX9_43.dll");
             File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
             File.Copy(utilDir + "/splashAndroid.png", apkAssetsDir + "/splash.png", true);
+
+            //recursively lowercase everything in the assets folder
+            LowercaseFolder(apkAssetsDir);
 
             // Edit apktool.yml to not compress music
             string yamlFile = File.ReadAllText(apkDir + "/apktool.yml");
@@ -153,6 +165,7 @@ namespace AM2RPortHelper
             File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
 
             // Run APKTOOL and build the apk
+            Console.WriteLine("Rebuild apk...");
             pStartInfo = new ProcessStartInfo
             {
                 FileName = bin,
@@ -164,6 +177,7 @@ namespace AM2RPortHelper
             p.WaitForExit();
 
             // Sign the apk
+            Console.WriteLine("Sign apk...");
             pStartInfo = new ProcessStartInfo
             {
                 FileName = bin,
