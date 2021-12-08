@@ -1,4 +1,8 @@
-﻿using System;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Transforms;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -33,8 +37,9 @@ namespace AM2RPortHelper
                 return;
             }
 
+            Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
             Console.WriteLine("THIS ONLY WORKS FOR MODS BASED ON THE COMMUNITY UPDATES! MODS BASED ON 1.1 WILL NOT WORK!");
-            Console.WriteLine("To which platform do you want to port to?\n1 - Linux\n2 - Android");
+            Console.WriteLine("To which platform do you want to port to?\n1 - Linux\n2 - Android\n3 - MacOS");
 
             var input = Console.ReadKey().Key.ToString();
             Console.WriteLine();
@@ -44,9 +49,11 @@ namespace AM2RPortHelper
 
                 case "D2": PortForAndroid(modZipPath); break;
 
+                case "D3": PortForMac(modZipPath); break;
+
                 default: Console.WriteLine("Unacceptable input. Aborting..."); return;
             }
-
+            Console.WriteLine("Successfully finished!");
             Console.WriteLine("Exiting in 5 seconds...");
             Thread.Sleep(5000);
         }
@@ -92,6 +99,7 @@ namespace AM2RPortHelper
             //zip the result if no 
             if (File.Exists(linuxModPath))
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(linuxModPath + " already exists! Please move it somewhere else.");
                 return;
             }
@@ -100,9 +108,6 @@ namespace AM2RPortHelper
 
             // Clean up
             Directory.Delete(assetsDir, true);
-
-            Console.WriteLine("Successfully finished!");
-            Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
         }
 
         static void PortForAndroid(FileInfo modZipPath)
@@ -164,6 +169,17 @@ namespace AM2RPortHelper
             yamlFile = yamlFile.Replace("doNotCompress:", "doNotCompress:\n- ogg");
             File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
 
+            // Edit the icons in the apk
+            string resPath = apkDir + "/res";
+            Image orig = Image.Load(utilDir + "/icon.png");
+            SaveAndroidIcon(orig, 96, resPath + "/drawable/icon.png");
+            SaveAndroidIcon(orig, 72, resPath + "/drawable-hdpi-v4/icon.png");
+            SaveAndroidIcon(orig, 36, resPath + "/drawable-ldpi-v4/icon.png");
+            SaveAndroidIcon(orig, 48, resPath + "/drawable-mdpi-v4/icon.png");
+            SaveAndroidIcon(orig, 96, resPath + "/drawable-xhdpi-v4/icon.png");
+            SaveAndroidIcon(orig, 144, resPath + "/drawable-xxhdpi-v4/icon.png");
+            SaveAndroidIcon(orig, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
+
             // Run APKTOOL and build the apk
             Console.WriteLine("Rebuild apk...");
             pStartInfo = new ProcessStartInfo
@@ -191,6 +207,7 @@ namespace AM2RPortHelper
             //Move apk if it doesn't exist already
             if (File.Exists(apkModPath))
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(apkModPath + " already exists! Please move it somewhere else.");
                 return;
             }
@@ -198,9 +215,114 @@ namespace AM2RPortHelper
 
             // Clean up
             Directory.Delete(extractDirectory, true);
+        }
+        static void PortForMac(FileInfo modZipPath)
+        {
+            string baseTempDirectory = tmp + "/" + modZipPath.Name;
+            string extractDirectory = baseTempDirectory + "/extract";
+            string appDirectory = baseTempDirectory + "/AM2R.app";
+            string contentsDir = baseTempDirectory + "/Contents";
+            string assetsDir = contentsDir + "/Resources";
+            string macosModPath = currentDir + "/" + Path.GetFileNameWithoutExtension(modZipPath.FullName) + "_MACOS.zip";
 
-            Console.WriteLine("Successfully finished!");
-            Console.WriteLine("\n**This will currently use default splashes and icons, if you don't like them don't forget to replace them in the apk**\n");
+            // Get name from user
+            //TODO: handle error on special characters
+            Console.WriteLine("State the name of your mod (no special characters!)");
+            string input = Console.ReadLine();
+
+            // Rename the .app "file", makes it too difficult to use with modpacker so commented out.
+            //if (!String.IsNullOrWhiteSpace(input))
+            //    appDirectory = appDirectory.Replace("AM2R", input);
+
+            // Check if temp folder exists, delete if yes, copy bare runner to there
+            if (Directory.Exists(baseTempDirectory))
+                Directory.Delete(baseTempDirectory, true);
+            Console.WriteLine("Copying Runner...");
+            Directory.CreateDirectory(contentsDir);
+            DirectoryCopy(utilDir + "/Contents", contentsDir, true);
+
+            // Extract mod to temp location
+            Console.WriteLine("Extracting...");
+            ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory, true);
+
+            // Delete unnecessary files, rename data.win, move in the new runner
+            Console.WriteLine("Delete unnecesary files and lowercase them...");
+            File.Delete(extractDirectory + "/AM2R.exe");
+            File.Delete(extractDirectory + "/D3DX9_43.dll");
+            File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
+            if (!File.Exists(assetsDir + "/icon.png"))
+                File.Copy(utilDir + "/icon.png", extractDirectory + "/icon.png");
+            if (!File.Exists(assetsDir + "/splash.png"))
+                File.Copy(utilDir + "/splash.png", extractDirectory + "/splash.png");
+            // Delete fonts folder if it exists, because I need to convert bytecode version from game and newer version doesn't support font loading
+            if (Directory.Exists(extractDirectory + "/lang/fonts"))
+                Directory.Delete(extractDirectory + "/lang/fonts", true);
+
+            // Lowercase every file first
+            LowercaseFolder(extractDirectory);
+
+            // Convert data.win to BC16 and get rid of not needed functions anymore
+            Console.WriteLine("Editing data.win to change data.win BC version and functions...");
+            string bin = "";
+            string args = "" ;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                bin = "\"" + utilDir + "/UTMTCli/UndertaleModCli.exe\"";
+                args = "";
+            }
+            else
+            {
+                // First chmod the file, just in case
+                Process.Start("chmod", "+x \"" + utilDir + "/UTMTCli/UndertaleModCli.dll\"");
+                bin = "dotnet";
+                args = "\"" + utilDir + "/UTMTCli/UndertaleModCli.dll\" ";
+                // Also chmod the runner. Just in case.
+                Process.Start("chmod", "+x \"" + contentsDir + "/MacOS/Mac_Runner");
+            }
+
+            ProcessStartInfo pStartInfo = new ProcessStartInfo
+            {
+                FileName = bin,
+                Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + utilDir + "/bc16AndRemoveFunctions.csx\" --dest \"" + extractDirectory + "/game.ios\"",
+                CreateNoWindow = false
+            };
+            Process p = new Process() { StartInfo = pStartInfo };
+            p.Start();
+            p.WaitForExit();
+
+            // Copy assets to the place where they belong to
+            Console.WriteLine("Copy files over...");
+            DirectoryCopy(extractDirectory, assetsDir, true);
+
+            // Edit config and plist to change display name
+            Console.WriteLine("Editing Runner references to AM2R...");
+            string textFile = File.ReadAllText(assetsDir + "/yoyorunner.config");
+            textFile = textFile.Replace("YoYo Runner", input);
+            File.WriteAllText(assetsDir + "/yoyorunner.config", textFile);
+
+            textFile = File.ReadAllText(contentsDir + "/Info.plist");
+            textFile = textFile.Replace("YoYo Runner", input);
+            File.WriteAllText(contentsDir + "/Info.plist", textFile);
+
+            // Create a .app directory and move contents in there
+            Directory.CreateDirectory(appDirectory);
+            Directory.Move(contentsDir, appDirectory + "/Contents");
+
+            Directory.Delete(extractDirectory, true);
+
+            //zip the result if no 
+            if (File.Exists(macosModPath))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(macosModPath + " already exists! Please move it somewhere else.");
+                return;
+            }
+            Console.WriteLine("Creating zip...");
+            ZipFile.CreateFromDirectory(baseTempDirectory, macosModPath);
+
+            // Clean up
+            Directory.Delete(baseTempDirectory, true);
         }
 
         static void LowercaseFolder(string directory)
@@ -219,6 +341,49 @@ namespace AM2RPortHelper
                 subdir.MoveTo(subdir.Parent.FullName + "/" + subdir.Name.ToLower());
                 LowercaseFolder(subdir.FullName);
             }
+        }
+
+        static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        {
+            // Get the subdirectories for the specified directory.
+            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+
+            if (!dir.Exists)
+            {
+                throw new DirectoryNotFoundException(
+                    "Source directory does not exist or could not be found: "
+                    + sourceDirName);
+            }
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+
+            // If the destination directory doesn't exist, create it.       
+            Directory.CreateDirectory(destDirName);
+
+            // Get the files in the directory and copy them to the new location.
+            FileInfo[] files = dir.GetFiles();
+            foreach (FileInfo file in files)
+            {
+                string tempPath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(tempPath, true);
+            }
+
+            // If copying subdirectories, copy them and their contents to new location.
+            if (copySubDirs)
+            {
+                foreach (DirectoryInfo subdir in dirs)
+                {
+                    string tempPath = Path.Combine(destDirName, subdir.Name);
+                    DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
+                }
+            }
+        }
+
+        static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
+        {
+            Image picture = icon;
+            picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
+            picture.SaveAsPng(filePath);
         }
     }
 }
