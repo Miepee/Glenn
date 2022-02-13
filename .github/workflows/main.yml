@@ -21,7 +21,7 @@ jobs:
             ARTIFACT: AM2RPortHelper/bin/Release/net5.0/osx-x64/publish
           - os: windows-latest
             COMMAND: AM2RPortHelper.csproj -c Release -r win-x86 -o builds\win86 --no-self-contained
-            ARTIFACT: AM2RPortHelper\bin\Release\net5.0\win-x86\publish
+            ARTIFACT: AM2RPortHelper\bin\Release\net5.0\win-x86\
     runs-on: ${{ matrix.os }}
     
 
