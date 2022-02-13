@@ -12,6 +12,7 @@ By default, the ports will use stock splash and icon images. Replacing `icon.png
 ## Porting notes
 - Keep Game Maker: Studio documentation in mind, using any functions that only work on one OS or function differently on different OS could lead to the ports having unexpected behaviour or even crashing.
 - Use `/` for folder seperation, instead of `\`. `\` only works on Windows, `/` works on every OS.
+- Every OS except Android will only write and read from "lowercase" inside of `working_directory`. This means, that if you create a directory called `MyCoolDirectory` and read from it with Game Maker functions, it will actually create the directory `mycooldirectory` instead and read from there. This will only become a problem if you create files/folders *outside* of Game Maker. If you do so make sure that those are all in *lowercase*! As Windows is case-insensitive, it doesn't care for the case of files.
 
 ### Linux
 - Don't write to the asset folder. Linux is distributed as an AppImage, which makes that whole directory read only and such operations would lead to a crash. Create the files you need in `working_directory` on game boot if they don't exist, and then write to `working_directory` instead. This will create the files and read from them in `~/.config/<mygame>`. Do not ship those files in the asset folder if you're planning to write to them.
