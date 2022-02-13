@@ -1,11 +1,11 @@
 # AM2RPortHelper
-A simple tool to make porting Windows builds of AM2R-Mods to other platforms easier. This will *only* work with VM-mods of the Community Updates, not of the original 1.1.  
-You need to have at least .NET Core 5 installed.
+A simple tool to make porting Windows builds of AM2R-Mods to other platforms easier. This will *only* work with VM-mods of the Community Updates, neither YYC mods nor mods of the original 1.1 will work.  
+You need to have at least .NET Core 5 installed in order to run this.
  
 ## How do I use this?
 Simply compress your mod as a zip, and then drag-n-drop it into this tool. After that, select if you want to have a port made for Linux or Android. A zip/apk that can be used for the [AM2RModPacker](https://github.com/Miepee/AM2RModpacker-Mac) will then be created into the directory next to the program.  
 
-For Android builds, you need to have Java installed.
+To create Android builds, you need to have Java installed.
 
 By default, the ports will use stock splash and icon images. Replacing `icon.png`, `splash.png` and `splashAndroid.png` in the utils folder with your own is recommended.
 
