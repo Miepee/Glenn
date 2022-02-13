@@ -14,13 +14,13 @@ jobs:
         configuration: [Release]
         include:
           - os: ubuntu-latest
-            COMMAND: AM2RPortHelper -c Release -p:PublishSingleFile=true -p:DebugType=embedded -r ubuntu.18.04-x64 --no-self-contained
+            COMMAND: AM2RPortHelper.csproj -c Release -p:PublishSingleFile=true -p:DebugType=embedded -r ubuntu.18.04-x64 --no-self-contained
             ARTIFACT: AM2RPortHelper/bin/Release/net5.0/ubuntu.18.04-x64/publish/
           - os: macOS-latest
-            COMMAND: AM2RPortHelper -c Release -r osx-x64 --no-self-contained
+            COMMAND: AM2RPortHelper.csproj -c Release -r osx-x64 --no-self-contained
             ARTIFACT: AM2RPortHelper/bin/Release/net6.0/osx-x64/publish
           - os: windows-latest
-            COMMAND: AM2RPortHelper -c Release -r win-x86 -o builds\win86 
+            COMMAND: AM2RPortHelper.csproj -c Release -r win-x86 -o builds\win86 
             ARTIFACT: AM2RPortHelper\bin\Release\net48\win-x86\publish
     runs-on: ${{ matrix.os }}
     
