@@ -1,25 +1,22 @@
 ﻿using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace AM2RPortHelper
 {
-    class Program
+    internal static class Program
     {
-        static string version = "1.2";
-        static string tmp = Path.GetTempPath();
-        static string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
-        static string utilDir = currentDir + "/utils";
+        private const string version = "1.2";
+        private static readonly string tmp = Path.GetTempPath();
+        private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+        private static readonly string utilDir = currentDir + "/utils";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
 
             Console.WriteLine("AM2RPortHelper v" + version);
@@ -30,7 +27,7 @@ namespace AM2RPortHelper
                 return;
             }
 
-            FileInfo modZipPath = new (args[0]);
+            FileInfo modZipPath = new FileInfo(args[0]);
             if (!modZipPath.Exists && modZipPath.Extension.ToLower() != "zip")
             {
                 Console.WriteLine("Path does not point to a mod zip");
@@ -58,7 +55,7 @@ namespace AM2RPortHelper
             Thread.Sleep(5000);
         }
 
-        static void PortForLinux(FileInfo modZipPath)
+        private static void PortForLinux(FileInfo modZipPath)
         {
             string extractDirectory = tmp + "/" + modZipPath.Name;
             string assetsDir = extractDirectory + "/assets";
@@ -83,7 +80,7 @@ namespace AM2RPortHelper
             }
 
             // Delete unnecessary files, rename data.win, move in the new runner
-            Console.WriteLine("Delete unnecesary files and lowercase them...");
+            Console.WriteLine("Delete unnecessary files and lowercase them...");
             File.Delete(assetsDir + "/AM2R.exe");
             File.Delete(assetsDir + "/D3DX9_43.dll");
             File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
@@ -110,7 +107,7 @@ namespace AM2RPortHelper
             Directory.Delete(assetsDir, true);
         }
 
-        static void PortForAndroid(FileInfo modZipPath)
+        private static void PortForAndroid(FileInfo modZipPath)
         {
             string extractDirectory = tmp + "/" + modZipPath.Name;
             string unzipDir = extractDirectory + "/zip";
@@ -139,7 +136,7 @@ namespace AM2RPortHelper
                 Arguments = args + "\"" + apktool + "\" d -f -o \"" + apkDir + "\" \"" + currentDir + "/utils/AM2RWrapper.apk" + "\"",
                 CreateNoWindow = true
             };
-            Process p = new Process() { StartInfo = pStartInfo };
+            Process p = new Process { StartInfo = pStartInfo };
             p.Start();
             p.WaitForExit();
 
@@ -188,7 +185,7 @@ namespace AM2RPortHelper
                 Arguments = args + "\"" + apktool + "\" b \"" + apkDir + "\" -o \"" + extractDirectory + "/build.apk" + "\"",
                 CreateNoWindow = true
             };
-            p = new Process() { StartInfo = pStartInfo };
+            p = new Process { StartInfo = pStartInfo };
             p.Start();
             p.WaitForExit();
 
@@ -200,7 +197,7 @@ namespace AM2RPortHelper
                 Arguments = args + "\"" + signer + "\" -a \"" + extractDirectory + "/build.apk" + "\"",
                 CreateNoWindow = true
             };
-            p = new Process() { StartInfo = pStartInfo };
+            p = new Process { StartInfo = pStartInfo };
             p.Start();
             p.WaitForExit();
 
@@ -216,7 +213,7 @@ namespace AM2RPortHelper
             // Clean up
             Directory.Delete(extractDirectory, true);
         }
-        static void PortForMac(FileInfo modZipPath)
+        private static void PortForMac(FileInfo modZipPath)
         {
             string baseTempDirectory = tmp + "/" + modZipPath.Name;
             string extractDirectory = baseTempDirectory + "/extract";
@@ -246,7 +243,7 @@ namespace AM2RPortHelper
             ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory, true);
 
             // Delete unnecessary files, rename data.win, move in the new runner
-            Console.WriteLine("Delete unnecesary files and lowercase them...");
+            Console.WriteLine("Delete unnecessary files and lowercase them...");
             File.Delete(extractDirectory + "/AM2R.exe");
             File.Delete(extractDirectory + "/D3DX9_43.dll");
             File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
@@ -263,8 +260,8 @@ namespace AM2RPortHelper
 
             // Convert data.win to BC16 and get rid of not needed functions anymore
             Console.WriteLine("Editing data.win to change data.win BC version and functions...");
-            string bin = "";
-            string args = "" ;
+            string bin;
+            string args;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -287,7 +284,7 @@ namespace AM2RPortHelper
                 Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + utilDir + "/bc16AndRemoveFunctions.csx\" -o \"" + extractDirectory + "/game.ios\"",
                 CreateNoWindow = false
             };
-            Process p = new Process() { StartInfo = pStartInfo };
+            Process p = new Process { StartInfo = pStartInfo };
             p.Start();
             p.WaitForExit();
 
@@ -327,7 +324,7 @@ namespace AM2RPortHelper
 
         static void LowercaseFolder(string directory)
         {
-            DirectoryInfo dir = new(directory);
+            DirectoryInfo dir = new DirectoryInfo(directory);
 
             foreach(var file in dir.GetFiles())
             {
@@ -335,15 +332,15 @@ namespace AM2RPortHelper
                 file.MoveTo(file.DirectoryName + "/" + file.Name.ToLower());
             }
 
-            foreach(var subdir in dir.GetDirectories())
+            foreach(var subDir in dir.GetDirectories())
             {
-                if (subdir.Name == subdir.Name.ToLower()) continue;
-                subdir.MoveTo(subdir.Parent.FullName + "/" + subdir.Name.ToLower());
-                LowercaseFolder(subdir.FullName);
+                if (subDir.Name == subDir.Name.ToLower()) continue;
+                subDir.MoveTo(subDir.Parent.FullName + "/" + subDir.Name.ToLower());
+                LowercaseFolder(subDir.FullName);
             }
         }
 
-        static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
         {
             // Get the subdirectories for the specified directory.
             DirectoryInfo dir = new DirectoryInfo(sourceDirName);
@@ -368,20 +365,21 @@ namespace AM2RPortHelper
                 file.CopyTo(tempPath, true);
             }
 
+
+            if (!copySubDirs)
+                return;
+
             // If copying subdirectories, copy them and their contents to new location.
-            if (copySubDirs)
+            foreach (DirectoryInfo subDir in dirs)
             {
-                foreach (DirectoryInfo subdir in dirs)
-                {
-                    string tempPath = Path.Combine(destDirName, subdir.Name);
-                    DirectoryCopy(subdir.FullName, tempPath, copySubDirs);
-                }
+                string tempPath = Path.Combine(destDirName, subDir.Name);
+                DirectoryCopy(subDir.FullName, tempPath, true);
             }
         }
 
-        static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
+        private static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
         {
-            Image picture = icon;
+            using Image picture = icon;
             picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
             picture.SaveAsPng(filePath);
         }
