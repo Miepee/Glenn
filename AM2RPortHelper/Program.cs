@@ -284,7 +284,7 @@ namespace AM2RPortHelper
             ProcessStartInfo pStartInfo = new ProcessStartInfo
             {
                 FileName = bin,
-                Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + utilDir + "/bc16AndRemoveFunctions.csx\" --dest \"" + extractDirectory + "/game.ios\"",
+                Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + utilDir + "/bc16AndRemoveFunctions.csx\" -o \"" + extractDirectory + "/game.ios\"",
                 CreateNoWindow = false
             };
             Process p = new Process() { StartInfo = pStartInfo };
