@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    paths-ignore: 
+      - 'README.md'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        configuration: [Release]
+        include:
+          - os: ubuntu-latest
+            COMMAND: AM2RPortHelper.csproj -c Release -p:PublishSingleFile=true -p:DebugType=embedded -r ubuntu.18.04-x64 --no-self-contained
+            ARTIFACT: AM2RPortHelper/bin/Release/net5.0/ubuntu.18.04-x64/publish/
+          - os: macOS-latest
+            COMMAND: AM2RPortHelper.csproj -c Release -r osx-x64 --no-self-contained
+            ARTIFACT: AM2RPortHelper/bin/Release/net5.0/osx-x64/publish
+          - os: windows-latest
+            COMMAND: AM2RPortHelper.csproj -c Release -r win-x86 -o builds\win86 --no-self-contained
+            ARTIFACT: AM2RPortHelper\bin\Release\net5.0\win-x86\
+    runs-on: ${{ matrix.os }}
+    
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      working-directory: ./AM2RPortHelper
+      run: dotnet restore
+    - name: Build
+      working-directory: ./AM2RPortHelper
+      run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}"
+    # Steps for uploading artifacts.
+    - name: Zip to Archive
+      run: 7z a -tzip ${{ matrix.os }}.zip ./${{ matrix.ARTIFACT }}
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: ${{ matrix.os }}
+        path: ${{ matrix.os }}.zip
