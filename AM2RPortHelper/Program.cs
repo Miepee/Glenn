@@ -322,7 +322,7 @@ namespace AM2RPortHelper
             Directory.Delete(baseTempDirectory, true);
         }
 
-        static void LowercaseFolder(string directory)
+        private static void LowercaseFolder(string directory)
         {
             DirectoryInfo dir = new DirectoryInfo(directory);
 
