@@ -379,7 +379,7 @@ namespace AM2RPortHelper
 
         private static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
         {
-            using Image picture = icon;
+            Image picture = icon;
             picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
             picture.SaveAsPng(filePath);
         }
