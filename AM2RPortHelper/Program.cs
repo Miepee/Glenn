@@ -11,7 +11,7 @@ namespace AM2RPortHelper
 {
     internal static class Program
     {
-        private const string version = "1.2";
+        private const string version = "1.3";
         private static readonly string tmp = Path.GetTempPath();
         private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
         private static readonly string utilDir = currentDir + "/utils";
