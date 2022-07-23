@@ -1,13 +1,14 @@
 # AM2RPortHelper
-A simple tool to make porting Windows builds of AM2R-Mods to other platforms easier. This will *only* work with VM-mods of the Community Updates, neither YYC mods nor mods of the original 1.1 will work.  
-You need to have at least .NET Core 5 installed in order to run this.
+A simple tool to make porting Windows builds of self-created AM2R-Mods to other platforms easier. This will *only* work with VM-mods of the Community Updates, neither YYC mods nor mods of the original 1.1 will work.  
+You need to have at least .NET Core 6 installed in order to run this.
  
 ## How do I use this?
-Simply compress your mod as a zip, and then drag-n-drop it into this tool. After that, select if you want to have a port made for Linux or Android. A zip/apk that can be used for the [AM2RModPacker](https://github.com/Miepee/AM2RModpacker-Mac) will then be created into the directory next to the program.  
+First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created, if you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just drag-n-drop it into this tool and, select if you want to have a port made for Linux, Android or Mac.  
+It will then create a new zip/apk, which can be used for the [AM2RModPacker](https://github.com/AM2R-Community-Developers/AM2RModpacker-Mac), in the directory next to the program. For the Mac build, you need to use my ModPacker-Mac version which can be found [here](https://github.com/AM2R-Community-Developers/AM2RModpacker-Mac).
 
 To create Android builds, you need to have Java installed.
 
-By default, the ports will use stock splash and icon images. Replacing `icon.png`, `splash.png` and `splashAndroid.png` in the utils folder with your own is recommended.
+By default, the ports will use stock splash and icon images. *It is recommended to replace `icon.png`, `splash.png` and `splashAndroid.png` in the `utils` folder with your own*.
 
 ## Porting notes
 - Keep Game Maker: Studio documentation in mind, using any functions that only work on one OS or function differently on different OS could lead to the ports having unexpected behaviour or even crashing.

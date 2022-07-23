@@ -18,7 +18,6 @@ namespace AM2RPortHelper
 
         private static void Main(string[] args)
         {
-
             Console.WriteLine("AM2RPortHelper v" + version);
 
             if (args == null || args.Length == 0)
@@ -51,8 +50,8 @@ namespace AM2RPortHelper
                 default: Console.WriteLine("Unacceptable input. Aborting..."); return;
             }
             Console.WriteLine("Successfully finished!");
-            Console.WriteLine("Exiting in 5 seconds...");
-            Thread.Sleep(5000);
+            Console.WriteLine("Exiting in 3 seconds...");
+            Thread.Sleep(3000);
         }
 
         private static void PortForLinux(FileInfo modZipPath)
@@ -119,8 +118,7 @@ namespace AM2RPortHelper
             string signer = currentDir + "/utils/uber-apk-signer.jar";
             string finalApkBuild = extractDirectory + "/build-aligned-debugSigned.apk";
             string apkModPath = currentDir + "/" + Path.GetFileNameWithoutExtension(modZipPath.FullName) + "_ANDROID.apk";
-
-
+            
             // Check if temp folder exists, delete if yes, extract zip to there
             if (Directory.Exists(extractDirectory))
                 Directory.Delete(extractDirectory, true);
@@ -139,17 +137,14 @@ namespace AM2RPortHelper
             Process p = new Process { StartInfo = pStartInfo };
             p.Start();
             p.WaitForExit();
-
-
+            
             // Move everything into assets folder
             Console.WriteLine("Move into assets folder...");
             foreach (var file in new DirectoryInfo(unzipDir).GetFiles())
                 file.MoveTo(apkAssetsDir + "/" + file.Name);
 
             foreach (var dir in new DirectoryInfo(unzipDir).GetDirectories())
-            {
                 dir.MoveTo(apkAssetsDir + "/" + dir.Name);
-            }
 
             // Delete unnecessary files, rename data.win, move in the new runner
             Console.WriteLine("Delete unnecessary files and lowercase them...");
@@ -346,12 +341,8 @@ namespace AM2RPortHelper
             DirectoryInfo dir = new DirectoryInfo(sourceDirName);
 
             if (!dir.Exists)
-            {
-                throw new DirectoryNotFoundException(
-                    "Source directory does not exist or could not be found: "
-                    + sourceDirName);
-            }
-
+                throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {sourceDirName}");
+            
             DirectoryInfo[] dirs = dir.GetDirectories();
 
             // If the destination directory doesn't exist, create it.       
@@ -364,8 +355,7 @@ namespace AM2RPortHelper
                 string tempPath = Path.Combine(destDirName, file.Name);
                 file.CopyTo(tempPath, true);
             }
-
-
+            
             if (!copySubDirs)
                 return;
 
