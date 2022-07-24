@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RollForward>LatestMajor</RollForward>
     <LangVersion>10</LangVersion>
+    <RootNamespace>AM2RPortHelper</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +19,10 @@
     <None Update="utils/**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AM2RPortHelperLib\AM2RPortHelperLib.csproj" />
   </ItemGroup>
 
 </Project>

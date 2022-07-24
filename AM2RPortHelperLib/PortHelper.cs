@@ -1,62 +1,19 @@
-﻿using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
-using System.Threading;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
-namespace AM2RPortHelper;
+namespace AM2RPortHelperLib;
 
-internal static class Program
+public class PortHelper
 {
-    private const string version = "1.3";
+
     private static readonly string tmp = Path.GetTempPath();
     private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
     private static readonly string utilDir = currentDir + "/utils";
-
-    //TODO: add "-l" flag. transfer launcher mods to each other.
     
-    private static void Main(string[] args)
-    {
-        Console.WriteLine("AM2RPortHelper v" + version);
-
-        if (args == null || args.Length == 0)
-        {
-            Console.WriteLine("Please drag-n-drop a Zip of your mod or provide it as an argument.");
-            return;
-        }
-
-        FileInfo modZipPath = new FileInfo(args[0]);
-        if (!modZipPath.Exists && modZipPath.Extension.ToLower() != "zip")
-        {
-            Console.WriteLine("Path does not point to a mod zip");
-            return;
-        }
-
-        Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
-        Console.WriteLine("THIS ONLY WORKS FOR MODS BASED ON THE COMMUNITY UPDATES! MODS BASED ON 1.1 WILL NOT WORK!");
-        Console.WriteLine("To which platform do you want to port to?\n1 - Linux\n2 - Android\n3 - MacOS");
-
-        var input = Console.ReadKey().Key.ToString();
-        Console.WriteLine();
-        switch (input)
-        {
-            case "D1": PortForLinux(modZipPath); break;
-
-            case "D2": PortForAndroid(modZipPath); break;
-
-            case "D3": PortForMac(modZipPath); break;
-
-            default: Console.WriteLine("Unacceptable input. Aborting..."); return;
-        }
-        Console.WriteLine("Successfully finished!");
-        Console.WriteLine("Exiting in 3 seconds...");
-        Thread.Sleep(3000);
-    }
-
-    private static void PortForLinux(FileInfo modZipPath)
+    public static void PortWindowsToLinux(FileInfo modZipPath)
     {
         string extractDirectory = tmp + "/" + modZipPath.Name;
         string assetsDir = extractDirectory + "/assets";
@@ -108,7 +65,7 @@ internal static class Program
         Directory.Delete(assetsDir, true);
     }
 
-    private static void PortForAndroid(FileInfo modZipPath)
+    public static void PortWindowsToAndroid(FileInfo modZipPath)
     {
         string extractDirectory = tmp + "/" + modZipPath.Name;
         string unzipDir = extractDirectory + "/zip";
@@ -210,7 +167,8 @@ internal static class Program
         // Clean up
         Directory.Delete(extractDirectory, true);
     }
-    private static void PortForMac(FileInfo modZipPath)
+    
+    public static void PortWindowsToMac(FileInfo modZipPath)
     {
         string baseTempDirectory = tmp + "/" + modZipPath.Name;
         string extractDirectory = baseTempDirectory + "/extract";
@@ -336,7 +294,7 @@ internal static class Program
             LowercaseFolder(subDir.FullName);
         }
     }
-
+    
     private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
     {
         // Get the subdirectories for the specified directory.
@@ -368,7 +326,7 @@ internal static class Program
             DirectoryCopy(subDir.FullName, tempPath, true);
         }
     }
-
+    
     private static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
     {
         Image picture = icon;
