@@ -63,11 +63,13 @@ public partial class MainForm : Form
         filePicker.FilePathChanged += ShouldButtonPortBeEnabled;
         buttonPort.Click += ButtonPortOnClick;
     }
+    
+    // Helper functions
     private async void ButtonPortOnClick(object sender, EventArgs e)
     {
         DisableAllElements();
 
-        PortHelper.OutputHandlerDelegate handler = output => Application.Instance.Invoke(() => labelProgress.Text = $"Info: {output}");
+        void OutputHandlerDelegate(string output) => Application.Instance.Invoke(() => labelProgress.Text = $"Info: {output}");
         string modZipPath = filePicker.FilePath;
         string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
@@ -82,13 +84,13 @@ public partial class MainForm : Form
             File.Delete(macPath);
         
         if (checkboxLinux.Checked.Value)
-            await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath,linuxPath, handler));
+            await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath,linuxPath, OutputHandlerDelegate));
         if (checkboxAndroid.Checked.Value)
-            await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath, androidPath, handler));
+            await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath, androidPath, OutputHandlerDelegate));
         if (checkboxMac.Checked.Value)
         {
             string modName = "foo";//MessageBox.Show()
-            await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, handler));
+            await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
         }
 
         labelProgress.Text = "Done!";
@@ -97,7 +99,7 @@ public partial class MainForm : Form
         EnableAllElements();
     }
     
-    public static void OpenFolder(string path)
+    private static void OpenFolder(string path)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             Process.Start("explorer.exe", $"\"{path}\"");
@@ -135,35 +137,36 @@ public partial class MainForm : Form
         buttonPort.Enabled = true;
     }
 
-    private Label labelSelectMod = new Label
+    // Attributes
+    private readonly Label labelSelectMod = new Label
     {
         Text = "Select Mod:"
     };
-    private FilePicker filePicker = new FilePicker()
+    private readonly FilePicker filePicker = new FilePicker
     {
         Filters = { new FileFilter("Zip file", "*.zip") }
     };
 
-    private CheckBox checkboxLinux = new CheckBox()
+    private readonly CheckBox checkboxLinux = new CheckBox
     {
         Text = "Linux"
     };
-    private CheckBox checkboxAndroid = new CheckBox()
+    private readonly CheckBox checkboxAndroid = new CheckBox
     {
         Text = "Android"
     };
-    private CheckBox checkboxMac = new CheckBox()
+    private readonly CheckBox checkboxMac = new CheckBox
     {
         Text = "Mac"
     };
 
-    private Button buttonPort = new Button()
+    private readonly Button buttonPort = new Button
     {
         Text = "Port!",
         Enabled = false
     };
 
-    private Label labelProgress = new Label()
+    private readonly Label labelProgress = new Label
     {
         Text = "Info: "
     };

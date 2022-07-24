@@ -3,7 +3,7 @@ using Eto.Forms;
 
 namespace AM2RPortHelperGUI.Wpf;
 
-class Program
+static class Program
 {
     [STAThread]
     public static void Main(string[] args)

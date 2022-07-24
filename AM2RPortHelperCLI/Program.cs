@@ -1,6 +1,5 @@
 ﻿using System;
 using System.CommandLine;
-using System.CommandLine.Builder;
 using System.IO;
 using AM2RPortHelperLib;
 
@@ -14,8 +13,7 @@ internal static class Program
     private static int Main(string[] args)
     {
         Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version);
-
-        //TODO!
+        
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED*");
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
@@ -23,7 +21,7 @@ internal static class Program
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
         var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac mod. Required for the Mac option, has no effect on anything else.");
 
-        RootCommand rootCommand = new RootCommand()
+        RootCommand rootCommand = new RootCommand
         {
             interactiveOption,
             fileOption,
