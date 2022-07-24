@@ -16,4 +16,10 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="..\LICENSE">
+        <Link>LICENSE</Link>
+      </Content>
+    </ItemGroup>
+
 </Project>
