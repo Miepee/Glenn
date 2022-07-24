@@ -1,14 +1,13 @@
 ﻿using System;
 using Eto.Forms;
 
-namespace AM2RPortHelperGUI.Wpf
+namespace AM2RPortHelperGUI.Wpf;
+
+class Program
 {
-    class Program
+    [STAThread]
+    public static void Main(string[] args)
     {
-        [STAThread]
-        public static void Main(string[] args)
-        {
-            new Application(Eto.Platforms.Wpf).Run(new MainForm());
-        }
+        new Application(Eto.Platforms.Wpf).Run(new MainForm());
     }
 }

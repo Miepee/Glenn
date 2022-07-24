@@ -1,9 +1,6 @@
 ﻿using System;
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using System.IO;
-using System.Threading;
 using AM2RPortHelperLib;
 
 namespace AM2RPortHelper;

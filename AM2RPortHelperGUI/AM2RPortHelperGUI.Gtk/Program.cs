@@ -1,14 +1,13 @@
 ﻿using System;
 using Eto.Forms;
 
-namespace AM2RPortHelperGUI.Gtk
+namespace AM2RPortHelperGUI.Gtk;
+
+class Program
 {
-    class Program
+    [STAThread]
+    public static void Main(string[] args)
     {
-        [STAThread]
-        public static void Main(string[] args)
-        {
-            new Application(Eto.Platforms.Gtk).Run(new MainForm());
-        }
+        new Application(Eto.Platforms.Gtk).Run(new MainForm());
     }
 }
