@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using AM2RPortHelperLib;
 using Eto.Forms;
@@ -18,9 +20,10 @@ namespace AM2RPortHelperGUI
             var mainLayout = new DynamicLayout();
             mainLayout.BeginVertical();
             mainLayout.AddRange(labelSelectMod,
-                                new Label { Height = 5}, 
+                                new Label { Height = 5 }, 
                                 filePicker, 
-                                new Label { Height = 10});
+                                labelProgress,
+                                new Label { Height = 10 });
             mainLayout.EndVertical();
             mainLayout.BeginCentered();
             mainLayout.AddRow(checkboxLinux, checkboxAndroid, checkboxMac);
@@ -63,17 +66,47 @@ namespace AM2RPortHelperGUI
         private async void ButtonPortOnClick(object sender, EventArgs e)
         {
             DisableAllElements();
+
+            PortHelper.OutputHandlerDelegate handler = output => Application.Instance.Invoke(() => labelProgress.Text = $"Info: {output}");
+            string modZipPath = filePicker.FilePath;
+            string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+            string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
+            string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
+            string macPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_MACOS.zip";
             
-            FileInfo modZipPath = new FileInfo(filePicker.FilePath);
+            if (File.Exists(linuxPath))
+                File.Delete(linuxPath);
+            if (File.Exists(androidPath))
+                File.Delete(androidPath);
+            if (File.Exists(macPath))
+                File.Delete(macPath);
+            
             if (checkboxLinux.Checked.Value)
-                await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath));
-            if (checkboxAndroid.Checked.Value)
-                await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath));
+                await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath,linuxPath, handler));
+            if (checkboxAndroid.Checked.Value) // 
+                await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath, androidPath, handler));
             if (checkboxMac.Checked.Value)
-                await Task.Run(() =>PortHelper.PortWindowsToMac(modZipPath));
+            {
+                string modName = "foo";//MessageBox.Show()
+                await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, handler));
+            }
+
+            labelProgress.Text = "Done!";
+            OpenFolder(currentDir);
             
             EnableAllElements();
         }
+        
+        public static void OpenFolder(string path)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start("explorer.exe", $"\"{path}\"");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start("xdg-open", $"\"{path}\"");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("open", $"\"{path}\"");
+        }
+        
         private void ShouldButtonPortBeEnabled(object sender, EventArgs e)
         {
             // any checkbox + selected mod
@@ -128,6 +161,11 @@ namespace AM2RPortHelperGUI
         {
             Text = "Port!",
             Enabled = false
+        };
+
+        private Label labelProgress = new Label()
+        {
+            Text = "Info: "
         };
     }
 }

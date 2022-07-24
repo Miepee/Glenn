@@ -6,27 +6,38 @@ using SixLabors.ImageSharp.Processing;
 
 namespace AM2RPortHelperLib;
 
-public class PortHelper
+public static class PortHelper
 {
+    public delegate void OutputHandlerDelegate(string output);
 
+    private static OutputHandlerDelegate outputHandler;
+
+    private static void SendOutput(string output)
+    {
+        if (outputHandler is not null)
+            outputHandler.Invoke(output);
+        else
+            Console.WriteLine(output);
+    }
+    
     private static readonly string tmp = Path.GetTempPath();
     private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
     private static readonly string utilDir = currentDir + "/utils";
     
-    public static void PortWindowsToLinux(FileInfo modZipPath)
+    public static void PortWindowsToLinux(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
-        string extractDirectory = tmp + "/" + modZipPath.Name;
+        outputHandler = outputDelegate;
+        string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string assetsDir = extractDirectory + "/assets";
-        string linuxModPath = currentDir + "/" + Path.GetFileNameWithoutExtension(modZipPath.FullName) + "_LINUX.zip";
 
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
-        Console.WriteLine("Extracting...");
-        ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory);
+        SendOutput("Extracting...");
+        ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Move everything into assets folder
-        Console.WriteLine("Moving into assets folder...");
+        SendOutput("Moving into assets folder...");
         Directory.CreateDirectory(assetsDir);
         foreach (var file in new DirectoryInfo(extractDirectory).GetFiles())
             file.MoveTo(assetsDir + "/" + file.Name);
@@ -38,7 +49,7 @@ public class PortHelper
         }
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        Console.WriteLine("Delete unnecessary files and lowercase them...");
+        SendOutput("Delete unnecessary files and lowercase them...");
         File.Delete(assetsDir + "/AM2R.exe");
         File.Delete(assetsDir + "/D3DX9_43.dll");
         File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
@@ -52,23 +63,17 @@ public class PortHelper
         LowercaseFolder(assetsDir);
 
         //zip the result if no 
-        if (File.Exists(linuxModPath))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(linuxModPath + " already exists! Please move it somewhere else.");
-            Console.ResetColor();
-            return;
-        }
-        Console.WriteLine("Creating zip...");
-        ZipFile.CreateFromDirectory(extractDirectory, linuxModPath);
+        SendOutput("Creating zip...");
+        ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
         // Clean up
         Directory.Delete(assetsDir, true);
     }
 
-    public static void PortWindowsToAndroid(FileInfo modZipPath)
+    public static void PortWindowsToAndroid(string inputRawZipPath, string outputRawApkPath, OutputHandlerDelegate outputDelegate = null)
     {
-        string extractDirectory = tmp + "/" + modZipPath.Name;
+        outputHandler = outputDelegate;
+        string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string unzipDir = extractDirectory + "/zip";
         string apkDir = extractDirectory + "/apk";
         string apkAssetsDir = apkDir + "/assets";
@@ -77,17 +82,16 @@ public class PortHelper
         string apktool = currentDir + "/utils/apktool.jar";
         string signer = currentDir + "/utils/uber-apk-signer.jar";
         string finalApkBuild = extractDirectory + "/build-aligned-debugSigned.apk";
-        string apkModPath = currentDir + "/" + Path.GetFileNameWithoutExtension(modZipPath.FullName) + "_ANDROID.apk";
-        
+
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
         Directory.CreateDirectory(extractDirectory);
-        Console.WriteLine("Extracting...");
-        ZipFile.ExtractToDirectory(modZipPath.FullName, unzipDir);
+        SendOutput("Extracting...");
+        ZipFile.ExtractToDirectory(inputRawZipPath, unzipDir);
 
         // Run APKTOOL and decompress the file
-        Console.WriteLine("Decompiling apk...");
+        SendOutput("Decompiling apk...");
         ProcessStartInfo pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
@@ -99,7 +103,7 @@ public class PortHelper
         p.WaitForExit();
         
         // Move everything into assets folder
-        Console.WriteLine("Move into assets folder...");
+        SendOutput("Move into assets folder...");
         foreach (var file in new DirectoryInfo(unzipDir).GetFiles())
             file.MoveTo(apkAssetsDir + "/" + file.Name);
 
@@ -107,7 +111,7 @@ public class PortHelper
             dir.MoveTo(apkAssetsDir + "/" + dir.Name);
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        Console.WriteLine("Delete unnecessary files and lowercase them...");
+        SendOutput("Delete unnecessary files and lowercase them...");
         File.Delete(apkAssetsDir + "/AM2R.exe");
         File.Delete(apkAssetsDir + "/D3DX9_43.dll");
         File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
@@ -133,7 +137,7 @@ public class PortHelper
         SaveAndroidIcon(orig, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
 
         // Run APKTOOL and build the apk
-        Console.WriteLine("Rebuild apk...");
+        SendOutput("Rebuild apk...");
         pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
@@ -145,7 +149,7 @@ public class PortHelper
         p.WaitForExit();
 
         // Sign the apk
-        Console.WriteLine("Sign apk...");
+        SendOutput("Sign apk...");
         pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
@@ -157,32 +161,24 @@ public class PortHelper
         p.WaitForExit();
 
         //Move apk if it doesn't exist already
-        if (File.Exists(apkModPath))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(apkModPath + " already exists! Please move it somewhere else.");
-            Console.ResetColor();
-            return;
-        }
-        File.Move(finalApkBuild, apkModPath);
+        File.Move(finalApkBuild, outputRawApkPath);
 
         // Clean up
         Directory.Delete(extractDirectory, true);
     }
     
-    public static void PortWindowsToMac(FileInfo modZipPath)
+    public static void PortWindowsToMac(string inputRawZipPath, string outputRawZipPath, string modName, OutputHandlerDelegate outputDelegate = null)
     {
-        string baseTempDirectory = tmp + "/" + modZipPath.Name;
+        outputHandler = outputDelegate;
+        string baseTempDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string extractDirectory = baseTempDirectory + "/extract";
         string appDirectory = baseTempDirectory + "/AM2R.app";
         string contentsDir = baseTempDirectory + "/Contents";
         string assetsDir = contentsDir + "/Resources";
-        string macosModPath = currentDir + "/" + Path.GetFileNameWithoutExtension(modZipPath.FullName) + "_MACOS.zip";
 
         // Get name from user
         //TODO: handle error on special characters
-        Console.WriteLine("State the name of your mod (no special characters!)");
-        string input = Console.ReadLine();
+        //TODO: do not have input in lib!!!
 
         // Rename the .app "file", makes it too difficult to use with modpacker so commented out.
         //if (!String.IsNullOrWhiteSpace(input))
@@ -191,16 +187,16 @@ public class PortHelper
         // Check if temp folder exists, delete if yes, copy bare runner to there
         if (Directory.Exists(baseTempDirectory))
             Directory.Delete(baseTempDirectory, true);
-        Console.WriteLine("Copying Runner...");
+        SendOutput("Copying Runner...");
         Directory.CreateDirectory(contentsDir);
         DirectoryCopy(utilDir + "/Contents", contentsDir, true);
 
         // Extract mod to temp location
-        Console.WriteLine("Extracting...");
-        ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory);
+        SendOutput("Extracting...");
+        ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        Console.WriteLine("Delete unnecessary files and lowercase them...");
+        SendOutput("Delete unnecessary files and lowercase them...");
         File.Delete(extractDirectory + "/AM2R.exe");
         File.Delete(extractDirectory + "/D3DX9_43.dll");
         File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
@@ -216,7 +212,7 @@ public class PortHelper
         LowercaseFolder(extractDirectory);
 
         // Convert data.win to BC16 and get rid of not needed functions anymore
-        Console.WriteLine("Editing data.win to change data.win BC version and functions...");
+        SendOutput("Editing data.win to change data.win BC version and functions...");
         string bin;
         string args;
 
@@ -246,17 +242,17 @@ public class PortHelper
         p.WaitForExit();
 
         // Copy assets to the place where they belong to
-        Console.WriteLine("Copy files over...");
+        SendOutput("Copy files over...");
         DirectoryCopy(extractDirectory, assetsDir, true);
 
         // Edit config and plist to change display name
-        Console.WriteLine("Editing Runner references to AM2R...");
+        SendOutput("Editing Runner references to AM2R...");
         string textFile = File.ReadAllText(assetsDir + "/yoyorunner.config");
-        textFile = textFile.Replace("YoYo Runner", input);
+        textFile = textFile.Replace("YoYo Runner", modName);
         File.WriteAllText(assetsDir + "/yoyorunner.config", textFile);
 
         textFile = File.ReadAllText(contentsDir + "/Info.plist");
-        textFile = textFile.Replace("YoYo Runner", input);
+        textFile = textFile.Replace("YoYo Runner", modName);
         File.WriteAllText(contentsDir + "/Info.plist", textFile);
 
         // Create a .app directory and move contents in there
@@ -266,15 +262,8 @@ public class PortHelper
         Directory.Delete(extractDirectory, true);
 
         //zip the result if no 
-        if (File.Exists(macosModPath))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(macosModPath + " already exists! Please move it somewhere else.");
-            Console.ResetColor();
-            return;
-        }
-        Console.WriteLine("Creating zip...");
-        ZipFile.CreateFromDirectory(baseTempDirectory, macosModPath);
+        SendOutput("Creating zip...");
+        ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
 
         // Clean up
         Directory.Delete(baseTempDirectory, true);
