@@ -32,10 +32,10 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./AM2RPortHelper
+      working-directory: ./AM2RPortHelperCLI
       run: dotnet restore
     - name: Build
-      working-directory: ./AM2RPortHelper
+      working-directory: ./AM2RPortHelperCLI
       run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}"
     # Steps for uploading artifacts.
     - name: Zip to Archive
@@ -56,12 +56,15 @@ jobs:
           - os: ubuntu-latest
             COMMAND: AM2RPortHelperGUI.Gtk.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r linux-x64 --no-self-contained
             ARTIFACT: AM2RPortHelperGUI.Gtk/bin/Release/net6.0/linux-x64/publish/
+            DIR: AM2RPortHelperGUI.Gtk
           - os: macOS-latest
             COMMAND: AM2RPortHelperGUI.Mac.csproj -r osx-x64 --no-self-contained
             ARTIFACT: AM2RPortHelperGUI.Mac/bin/Release/net6.0/osx-x64/publish
+            DIR: AM2RPortHelperGUI.Mac
           - os: windows-latest
             COMMAND: AM2RPortHelperGUI.Wpf.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
             ARTIFACT: AM2RPortHelperGUI.Wpf\bin\Release\net6.0\win-x86\
+            DIR: AM2RPortHelperGUI.Wpf
     runs-on: ${{ matrix.os }}
     
 
@@ -72,10 +75,10 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./AM2RPortHelper
+      working-directory: ./${{ matrix.DIR }}
       run: dotnet restore
     - name: Build
-      working-directory: ./AM2RPortHelper
+      working-directory: ./${{ matrix.DIR }}
       run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}"
     # Steps for uploading artifacts.
     - name: Zip to Archive
