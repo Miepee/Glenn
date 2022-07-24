@@ -1,13 +1,15 @@
 ﻿using System;
 using System.CommandLine;
+using System.CommandLine.Builder;
 using System.IO;
 using AM2RPortHelperLib;
 
 namespace AM2RPortHelper;
 
+
 internal static class Program
 {
-    //TODO: add "-l" flag. transfer launcher mods to each other.
+    //TODO: add "-l" flag. port launcher mods to different versions.
     
     private static int Main(string[] args)
     {
@@ -21,10 +23,18 @@ internal static class Program
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
         var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac mod. Required for the Mac option, has no effect on anything else.");
 
-        RootCommand rootCommand = new RootCommand();
-        rootCommand.AddOption(interactiveOption);
+        RootCommand rootCommand = new RootCommand()
+        {
+            interactiveOption,
+            fileOption,
+            linuxOption,
+            androidOption,
+            macOption,
+            nameOption
+        };
         rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption, macOption, nameOption);
-
+        
+        
         return rootCommand.Invoke(args);
         
         /*
@@ -76,7 +86,7 @@ internal static class Program
             Console.WriteLine("Please provide the full path to the raw mod zip!");
             modZipPath = Console.ReadLine();
 
-            if (IsValidInputZip(modZipPath))
+            if (!IsValidInputZip(modZipPath))
                 Console.WriteLine("Path does not exist, or does not point to a zip file!");
             else 
                 invalidZip = false;
@@ -143,7 +153,7 @@ internal static class Program
     
     private static bool IsValidInputZip(string path)
     {
-        return path == null || (!File.Exists(path) && Path.GetExtension(path).ToLower() != ".zip");
+        return path != null && (File.Exists(path) || Path.GetExtension(path).ToLower() == ".zip");
     }
 
     private static bool IsValidInputZip(FileInfo path)
