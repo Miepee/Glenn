@@ -33,11 +33,11 @@ public static class PortHelper
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
-        SendOutput("Extracting...");
+        SendOutput("Extracting Linux...");
         ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Move everything into assets folder
-        SendOutput("Moving into assets folder...");
+        SendOutput("Moving into Linux assets folder...");
         Directory.CreateDirectory(assetsDir);
         foreach (var file in new DirectoryInfo(extractDirectory).GetFiles())
             file.MoveTo(assetsDir + "/" + file.Name);
@@ -49,7 +49,7 @@ public static class PortHelper
         }
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        SendOutput("Delete unnecessary files and lowercase them...");
+        SendOutput("Delete unnecessary files for Linux and lowercase them...");
         File.Delete(assetsDir + "/AM2R.exe");
         File.Delete(assetsDir + "/D3DX9_43.dll");
         File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
@@ -63,7 +63,7 @@ public static class PortHelper
         LowercaseFolder(assetsDir);
 
         //zip the result if no 
-        SendOutput("Creating zip...");
+        SendOutput("Creating Linux zip...");
         ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
         // Clean up
@@ -103,7 +103,7 @@ public static class PortHelper
         p.WaitForExit();
         
         // Move everything into assets folder
-        SendOutput("Move into assets folder...");
+        SendOutput("Move into Android assets folder...");
         foreach (var file in new DirectoryInfo(unzipDir).GetFiles())
             file.MoveTo(apkAssetsDir + "/" + file.Name);
 
@@ -111,7 +111,7 @@ public static class PortHelper
             dir.MoveTo(apkAssetsDir + "/" + dir.Name);
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        SendOutput("Delete unnecessary files and lowercase them...");
+        SendOutput("Delete unnecessary files for Android and lowercase them...");
         File.Delete(apkAssetsDir + "/AM2R.exe");
         File.Delete(apkAssetsDir + "/D3DX9_43.dll");
         File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
@@ -192,11 +192,11 @@ public static class PortHelper
         DirectoryCopy(utilDir + "/Contents", contentsDir, true);
 
         // Extract mod to temp location
-        SendOutput("Extracting...");
+        SendOutput("Extracting Mac...");
         ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        SendOutput("Delete unnecessary files and lowercase them...");
+        SendOutput("Delete unnecessary files for Mac and lowercase them...");
         File.Delete(extractDirectory + "/AM2R.exe");
         File.Delete(extractDirectory + "/D3DX9_43.dll");
         File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
@@ -262,7 +262,7 @@ public static class PortHelper
         Directory.Delete(extractDirectory, true);
 
         //zip the result if no 
-        SendOutput("Creating zip...");
+        SendOutput("Creating Mac zip...");
         ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
 
         // Clean up
