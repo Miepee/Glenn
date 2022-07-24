@@ -1,0 +1,133 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using AM2RPortHelperLib;
+using Eto.Forms;
+using Eto.Drawing;
+
+namespace AM2RPortHelperGUI
+{
+    public partial class MainForm : Form
+    {
+        public MainForm()
+        {
+            Title = "AM2RPortHelper";
+            MinimumSize = new Size(200, 200);
+
+            
+            var mainLayout = new DynamicLayout();
+            mainLayout.BeginVertical();
+            mainLayout.AddRange(labelSelectMod,
+                                new Label { Height = 5}, 
+                                filePicker, 
+                                new Label { Height = 10});
+            mainLayout.EndVertical();
+            mainLayout.BeginCentered();
+            mainLayout.AddRow(checkboxLinux, checkboxAndroid, checkboxMac);
+            mainLayout.AddSpace();
+            mainLayout.EndCentered();
+            mainLayout.BeginVertical();
+            mainLayout.AddRange(new Label { Height = 10}, buttonPort, null);
+            mainLayout.EndVertical();
+            
+            var mainPage = new TabPage
+            {
+                Text = "Raw Mods",
+                Content = mainLayout
+            };
+            
+            var am2rModLayout = new DynamicLayout();
+            var am2rModPage = new TabPage
+            {
+                Text = "AM2RLauncher Mods",
+                Content = am2rModLayout
+            };
+            
+            
+            Content = new TabControl
+            {
+                Pages =
+                {
+                    mainPage,
+                    am2rModPage
+                }
+            };
+            
+            // events
+            checkboxAndroid.CheckedChanged += ShouldButtonPortBeEnabled;
+            checkboxLinux.CheckedChanged += ShouldButtonPortBeEnabled;
+            checkboxMac.CheckedChanged += ShouldButtonPortBeEnabled;
+            filePicker.FilePathChanged += ShouldButtonPortBeEnabled;
+            buttonPort.Click += ButtonPortOnClick;
+        }
+        private async void ButtonPortOnClick(object sender, EventArgs e)
+        {
+            DisableAllElements();
+            
+            FileInfo modZipPath = new FileInfo(filePicker.FilePath);
+            if (checkboxLinux.Checked.Value)
+                await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath));
+            if (checkboxAndroid.Checked.Value)
+                await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath));
+            if (checkboxMac.Checked.Value)
+                await Task.Run(() =>PortHelper.PortWindowsToMac(modZipPath));
+            
+            EnableAllElements();
+        }
+        private void ShouldButtonPortBeEnabled(object sender, EventArgs e)
+        {
+            // any checkbox + selected mod
+            if ((checkboxAndroid.Checked.Value || checkboxLinux.Checked.Value || checkboxMac.Checked.Value) 
+                && !String.IsNullOrWhiteSpace(filePicker.FilePath))
+                buttonPort.Enabled = true;
+            else
+                buttonPort.Enabled = false;
+        }
+
+        private void DisableAllElements()
+        {
+            checkboxAndroid.Enabled = false;
+            checkboxLinux.Enabled = false;
+            checkboxMac.Enabled = false;
+            filePicker.Enabled = false;
+            buttonPort.Enabled = false;
+        }
+        
+        private void EnableAllElements()
+        {
+            checkboxAndroid.Enabled = true;
+            checkboxLinux.Enabled = true;
+            checkboxMac.Enabled = true;
+            filePicker.Enabled = true;
+            buttonPort.Enabled = true;
+        }
+
+        private Label labelSelectMod = new Label
+        {
+            Text = "Select Mod:"
+        };
+        private FilePicker filePicker = new FilePicker()
+        {
+            Filters = { new FileFilter("Zip file", "*.zip") }
+        };
+
+        private CheckBox checkboxLinux = new CheckBox()
+        {
+            Text = "Linux"
+        };
+        private CheckBox checkboxAndroid = new CheckBox()
+        {
+            Text = "Android"
+        };
+        private CheckBox checkboxMac = new CheckBox()
+        {
+            Text = "Mac"
+        };
+
+        private Button buttonPort = new Button()
+        {
+            Text = "Port!",
+            Enabled = false
+        };
+    }
+}

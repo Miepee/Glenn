@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperCLI", "AM2RPo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperLib", "AM2RPortHelperLib\AM2RPortHelperLib.csproj", "{FB200270-51C9-45FC-BF9C-E9006576D00A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI", "AM2RPortHelperGUI\AM2RPortHelperGUI\AM2RPortHelperGUI.csproj", "{A803417B-9A25-4166-820F-6089D7EE84A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Gtk", "AM2RPortHelperGUI\AM2RPortHelperGUI.Gtk\AM2RPortHelperGUI.Gtk.csproj", "{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Mac", "AM2RPortHelperGUI\AM2RPortHelperGUI.Mac\AM2RPortHelperGUI.Mac.csproj", "{21D15228-8BC7-41DB-8913-74AE82566712}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Wpf", "AM2RPortHelperGUI\AM2RPortHelperGUI.Wpf\AM2RPortHelperGUI.Wpf.csproj", "{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +29,22 @@ Global
 		{FB200270-51C9-45FC-BF9C-E9006576D00A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB200270-51C9-45FC-BF9C-E9006576D00A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB200270-51C9-45FC-BF9C-E9006576D00A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A803417B-9A25-4166-820F-6089D7EE84A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A803417B-9A25-4166-820F-6089D7EE84A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A803417B-9A25-4166-820F-6089D7EE84A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A803417B-9A25-4166-820F-6089D7EE84A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21D15228-8BC7-41DB-8913-74AE82566712}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21D15228-8BC7-41DB-8913-74AE82566712}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21D15228-8BC7-41DB-8913-74AE82566712}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21D15228-8BC7-41DB-8913-74AE82566712}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

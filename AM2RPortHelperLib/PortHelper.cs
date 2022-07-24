@@ -23,7 +23,7 @@ public class PortHelper
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
         Console.WriteLine("Extracting...");
-        ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory, true);
+        ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory);
 
         // Move everything into assets folder
         Console.WriteLine("Moving into assets folder...");
@@ -56,6 +56,7 @@ public class PortHelper
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(linuxModPath + " already exists! Please move it somewhere else.");
+            Console.ResetColor();
             return;
         }
         Console.WriteLine("Creating zip...");
@@ -160,6 +161,7 @@ public class PortHelper
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(apkModPath + " already exists! Please move it somewhere else.");
+            Console.ResetColor();
             return;
         }
         File.Move(finalApkBuild, apkModPath);
@@ -195,7 +197,7 @@ public class PortHelper
 
         // Extract mod to temp location
         Console.WriteLine("Extracting...");
-        ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory, true);
+        ZipFile.ExtractToDirectory(modZipPath.FullName, extractDirectory);
 
         // Delete unnecessary files, rename data.win, move in the new runner
         Console.WriteLine("Delete unnecessary files and lowercase them...");
@@ -268,6 +270,7 @@ public class PortHelper
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(macosModPath + " already exists! Please move it somewhere else.");
+            Console.ResetColor();
             return;
         }
         Console.WriteLine("Creating zip...");
