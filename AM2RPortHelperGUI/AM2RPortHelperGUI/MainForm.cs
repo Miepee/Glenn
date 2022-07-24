@@ -83,7 +83,7 @@ namespace AM2RPortHelperGUI
             
             if (checkboxLinux.Checked.Value)
                 await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath,linuxPath, handler));
-            if (checkboxAndroid.Checked.Value) // 
+            if (checkboxAndroid.Checked.Value)
                 await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath, androidPath, handler));
             if (checkboxMac.Checked.Value)
             {
