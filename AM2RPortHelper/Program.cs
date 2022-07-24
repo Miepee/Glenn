@@ -16,6 +16,8 @@ internal static class Program
     private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
     private static readonly string utilDir = currentDir + "/utils";
 
+    //TODO: add "-l" flag. transfer launcher mods to each other.
+    
     private static void Main(string[] args)
     {
         Console.WriteLine("AM2RPortHelper v" + version);
