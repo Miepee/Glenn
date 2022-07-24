@@ -7,7 +7,8 @@ using SixLabors.ImageSharp.Processing;
 namespace AM2RPortHelperLib;
 
 public static class PortHelper
-{
+{    
+    public const string Version = "1.3";
     public delegate void OutputHandlerDelegate(string output);
 
     private static OutputHandlerDelegate outputHandler;
@@ -167,6 +168,7 @@ public static class PortHelper
         Directory.Delete(extractDirectory, true);
     }
     
+    //TODO: try to figure out if its possible to extract the name from the data.win file? They do have a displayname option last time I checked...
     public static void PortWindowsToMac(string inputRawZipPath, string outputRawZipPath, string modName, OutputHandlerDelegate outputDelegate = null)
     {
         outputHandler = outputDelegate;
@@ -178,11 +180,6 @@ public static class PortHelper
 
         // Get name from user
         //TODO: handle error on special characters
-        //TODO: do not have input in lib!!!
-
-        // Rename the .app "file", makes it too difficult to use with modpacker so commented out.
-        //if (!String.IsNullOrWhiteSpace(input))
-        //    appDirectory = appDirectory.Replace("AM2R", input);
 
         // Check if temp folder exists, delete if yes, copy bare runner to there
         if (Directory.Exists(baseTempDirectory))

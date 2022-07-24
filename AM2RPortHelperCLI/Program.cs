@@ -7,38 +7,64 @@ namespace AM2RPortHelper;
 
 internal static class Program
 {
-    private const string version = "1.3";
-
     //TODO: add "-l" flag. transfer launcher mods to each other.
     
     private static int Main(string[] args)
     {
-        Console.WriteLine("AM2RPortHelperCLI v" + version);
+        Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version);
 
         //TODO!
-        var interactiveOption = new Option<bool>(new[] {"-i", "--interactive"}, "Use an interactive mode");
+        var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
+        var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED*");
+        var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
+        var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
+        var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
+        var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac mod. Required for the Mac option, has no effect on anything else.");
 
         RootCommand rootCommand = new RootCommand();
         rootCommand.AddOption(interactiveOption);
-        rootCommand.SetHandler(RootMethod, interactiveOption);
+        rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption, macOption, nameOption);
 
         return rootCommand.Invoke(args);
         
         /*
+         TODO: show this somewhere? maybe?
         Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
         Console.WriteLine("THIS ONLY WORKS FOR MODS BASED ON THE COMMUNITY UPDATES! MODS BASED ON 1.1 WILL NOT WORK!");
-        Console.WriteLine("To which platform do you want to port to?\n1 - Linux\n2 - Android\n3 - MacOS");
         */
 
     }
-    private static void RootMethod(bool interactive)
+    private static void RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath, string modName)
     {
         if (interactive)
         {
             RunInteractive();
             return;
         }
-        var x = 0;
+        if (!IsValidInputZip(inputModPath))
+        {
+            Console.Error.WriteLine("Input path does not exist, or does not point to a zip file!");
+            return;
+        }
+
+        if (linuxPath is not null)
+        {
+            PortHelper.PortWindowsToLinux(inputModPath.FullName, linuxPath.FullName);
+        }
+        if (androidPath is not null)
+        {
+            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName);
+        }
+        if (macPath is not null)
+        {
+            if (modName is null)
+            {
+                Console.Error.WriteLine("Mac option was chosen but mod name was not given!");
+                return;
+            }
+            PortHelper.PortWindowsToMac(inputModPath.FullName, macPath.FullName, modName);
+        }
+        Console.WriteLine("Done");
     }
     private static void RunInteractive()
     {
@@ -50,7 +76,7 @@ internal static class Program
             Console.WriteLine("Please provide the full path to the raw mod zip!");
             modZipPath = Console.ReadLine();
 
-            if (modZipPath == null || (!File.Exists(modZipPath) && Path.GetExtension(modZipPath).ToLower() != ".zip"))
+            if (IsValidInputZip(modZipPath))
                 Console.WriteLine("Path does not exist, or does not point to a zip file!");
             else 
                 invalidZip = false;
@@ -88,6 +114,7 @@ internal static class Program
             }
         } while (invalidOS);
 
+        // Port everything
         string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
@@ -112,5 +139,15 @@ internal static class Program
         }
         
         Console.WriteLine("Successfully finished!");
+    }
+    
+    private static bool IsValidInputZip(string path)
+    {
+        return path == null || (!File.Exists(path) && Path.GetExtension(path).ToLower() != ".zip");
+    }
+
+    private static bool IsValidInputZip(FileInfo path)
+    {
+        return path is not null && IsValidInputZip(path.FullName);
     }
 }

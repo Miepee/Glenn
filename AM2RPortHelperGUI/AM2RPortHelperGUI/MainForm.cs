@@ -13,7 +13,7 @@ public partial class MainForm : Form
 {
     public MainForm()
     {
-        Title = "AM2RPortHelper";
+        Title = $"AM2RPortHelper - v{PortHelper.Version}";
         MinimumSize = new Size(200, 200);
 
         
