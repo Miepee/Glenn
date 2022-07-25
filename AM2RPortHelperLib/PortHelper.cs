@@ -2,17 +2,16 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 
 namespace AM2RPortHelperLib;
 
-public static class PortHelper
+public static partial class PortHelper
 {    
     public const string Version = "1.3";
     public delegate void OutputHandlerDelegate(string output);
 
     private static OutputHandlerDelegate outputHandler;
-
+    
     private static void SendOutput(string output)
     {
         if (outputHandler is not null)
@@ -20,11 +19,135 @@ public static class PortHelper
         else
             Console.WriteLine(output);
     }
-    
+
     private static readonly string tmp = Path.GetTempPath();
     private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
     private static readonly string utilDir = currentDir + "/utils";
+
+    public static void PortLauncherMod(string inputLauncherZipPath, string targetOS, bool includeAndroid, string outputLauncherZipPath, OutputHandlerDelegate outputDelegate = null)
+    {
+        outputHandler = outputDelegate;  
+        string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputLauncherZipPath);
+        string filesToCopyDir = extractDirectory + "/files_to_copy";
+        
+        // Check if temp folder exists, delete if yes, extract zip to there
+        if (Directory.Exists(extractDirectory))
+            Directory.Delete(extractDirectory, true);
+        SendOutput("Extracting Launcher mod...");
+        ZipFile.ExtractToDirectory(inputLauncherZipPath, extractDirectory);
+
+        // Run sha256 hash on runner to see if it's supported!        
+        string runnerHash = CalculateSHA256(extractDirectory + "/AM2R.xdelta");
+        string[] allowedHashes = new[] { "b78c4fd2dc481f97b60440a5c89786da284b4aaeeba9fb2e3b48ac369cfe50d5", "243509f4270f448411c8405b71d7bc4f5d4fe5f3ecc1638d9c1218bf76b69f1f", "852b9a9466f99a53260b8147c6d286b81c145b2c10b00bb5c392b40b035811b5"};
+        if (!allowedHashes.Contains(runnerHash))
+            throw new NotSupportedException("Invalid GM:S version! Porting Launcher mods is only supported for mods build with GM:S 1.4.1763!");
+        
+        var profile = Serializer.Deserialize<ProfileXML>(File.ReadAllText(extractDirectory + "/profile.xml"));
+        if (profile.UsesYYC)
+            throw new NotSupportedException("Launcher Modis YYC, cannot port!");
+        string currentOS = profile.OperatingSystem;
+        bool isAndroidIncluded = profile.SupportsAndroid;
+
+        if (targetOS == profile.OperatingSystem)
+        {
+            SendOutput("Target OS and Launcher OS are the same; exiting.");
+            return;
+        }
+
+        switch (targetOS)
+        {
+            case "Windows":
+            {
+                File.Move(extractDirectory + "/game.xdelta", extractDirectory + "/data.xdelta");
+                
+                // get proper runner
+                File.Delete(extractDirectory + "/AM2R.xdelta");
+                File.Copy(utilDir + "/windowsRunner.xdelta", extractDirectory + "/AM2R.xdelta");
+                
+                // Windows doesn't care about capitalization and because I can't predict how it originally was, I'm going to ignore it.
+                
+                // Windows doesn't have icons/splashes, so we remove those if they exist.
+                if (!File.Exists(filesToCopyDir + "/icon.png"))
+                    File.Delete(filesToCopyDir + "/icon.png");
+                if (!File.Exists(filesToCopyDir + "/splash.png"))
+                    File.Delete(filesToCopyDir + "/splash.png");
+
+                // Properly set profile.xml variables.
+                profile.OperatingSystem = "Windows";
+                profile.SaveLocation = currentOS switch
+                {
+                    "Linux" => profile.SaveLocation.Replace("~/.config", "%localappdata%"),
+                    "Mac" => profile.SaveLocation.Replace("~/Library/Application Support", "%localappdata%"),
+                    _ => throw new NotSupportedException("Unsupported OS " + currentOS)
+                };
+                File.WriteAllText(extractDirectory + "/profile.xml",Serializer.Serialize<ProfileXML>(profile));
+                break;
+            }
+            
+            case "Linux":
+            {
+                if (currentOS == "Windows")
+                    File.Move(extractDirectory + "/data.xdelta", extractDirectory + "/game.xdelta");
+
+                // get proper runner
+                File.Delete(extractDirectory + "/AM2R.xdelta");
+                File.Copy(utilDir + "/linuxRunner.xdelta", extractDirectory + "/AM2R.xdelta");
+                
+                // Linux needs everything lowercased. Only needed if we're coming from Windows
+                if (currentOS == "Windows")
+                    LowercaseFolder(extractDirectory + "/files_to_copy");                  
+                
+                // Windows doesn't have icon/splash, so we copy them over from here
+                if (!File.Exists(filesToCopyDir + "/icon.png"))
+                    File.Copy(utilDir + "/icon.png", filesToCopyDir + "/icon.png");
+                if (!File.Exists(filesToCopyDir + "/splash.png"))
+                    File.Copy(utilDir + "/splash.png", filesToCopyDir + "/splash.png");
+
+                // Properly set profile.xml variables
+                profile.OperatingSystem = "Linux";
+                profile.SaveLocation = currentOS switch
+                {
+                    "Windows" => profile.SaveLocation.Replace("%localappdata%", "~/.config"),
+                    "Mac" => profile.SaveLocation.Replace("~/Library/Application Support", "~/.config"),
+                    _ => throw new NotSupportedException("Unsupported OS " + currentOS)
+                };
+                File.WriteAllText(extractDirectory + "/profile.xml",Serializer.Serialize<ProfileXML>(profile)); 
+                break;
+            }
+
+            case "Mac":
+            {
+                //TODO: write this Somewhat difficult, since it's not just a data swap, we need to run UMT on it as well to transfer the BC version n stuff
+                
+                break;
+            }
+        }
+
+        if (!includeAndroid)
+        {
+            if (File.Exists(extractDirectory + "/droid.xdelta"))
+                File.Delete(extractDirectory + "/droid.xdelta");
+            if (Directory.Exists(extractDirectory + "/android")) 
+                Directory.Delete(extractDirectory + "/android", true);
+        }
+        else
+        {
+            // If APK is not there, we need to create the APK ourselves.
+            if (!isAndroidIncluded)
+            {
+                //TODO: see above         
+            }
+        }
+        
+        //zip the result
+        SendOutput($"Creating Launcher zip for {targetOS}...");
+        ZipFile.CreateFromDirectory(extractDirectory, outputLauncherZipPath);
+
+        // Clean up
+        Directory.Delete(extractDirectory, true);
+    }
     
+    // TODO: Make these not windows -> OS, but Raw -> OS
     public static void PortWindowsToLinux(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
         outputHandler = outputDelegate;
@@ -63,7 +186,7 @@ public static class PortHelper
         //recursively lowercase everything in the assets folder
         LowercaseFolder(assetsDir);
 
-        //zip the result if no 
+        //zip the result
         SendOutput("Creating Linux zip...");
         ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
@@ -161,7 +284,7 @@ public static class PortHelper
         p.Start();
         p.WaitForExit();
 
-        //Move apk if it doesn't exist already
+        //Move apk
         File.Move(finalApkBuild, outputRawApkPath);
 
         // Clean up
@@ -258,7 +381,7 @@ public static class PortHelper
 
         Directory.Delete(extractDirectory, true);
 
-        //zip the result if no 
+        //zip the result
         SendOutput("Creating Mac zip...");
         ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
 
@@ -266,60 +389,5 @@ public static class PortHelper
         Directory.Delete(baseTempDirectory, true);
     }
 
-    private static void LowercaseFolder(string directory)
-    {
-        DirectoryInfo dir = new DirectoryInfo(directory);
-
-        foreach(var file in dir.GetFiles())
-        {
-            if (file.Name == file.Name.ToLower()) continue;
-            file.MoveTo(file.DirectoryName + "/" + file.Name.ToLower());
-        }
-
-        foreach(var subDir in dir.GetDirectories())
-        {
-            if (subDir.Name == subDir.Name.ToLower()) continue;
-            subDir.MoveTo(subDir.Parent.FullName + "/" + subDir.Name.ToLower());
-            LowercaseFolder(subDir.FullName);
-        }
-    }
     
-    private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
-    {
-        // Get the subdirectories for the specified directory.
-        DirectoryInfo dir = new DirectoryInfo(sourceDirName);
-
-        if (!dir.Exists)
-            throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {sourceDirName}");
-        
-        DirectoryInfo[] dirs = dir.GetDirectories();
-
-        // If the destination directory doesn't exist, create it.       
-        Directory.CreateDirectory(destDirName);
-
-        // Get the files in the directory and copy them to the new location.
-        FileInfo[] files = dir.GetFiles();
-        foreach (FileInfo file in files)
-        {
-            string tempPath = Path.Combine(destDirName, file.Name);
-            file.CopyTo(tempPath, true);
-        }
-        
-        if (!copySubDirs)
-            return;
-
-        // If copying subdirectories, copy them and their contents to new location.
-        foreach (DirectoryInfo subDir in dirs)
-        {
-            string tempPath = Path.Combine(destDirName, subDir.Name);
-            DirectoryCopy(subDir.FullName, tempPath, true);
-        }
-    }
-    
-    private static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
-    {
-        Image picture = icon;
-        picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
-        picture.SaveAsPng(filePath);
-    }
 }

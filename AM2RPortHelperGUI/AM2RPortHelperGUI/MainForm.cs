@@ -39,6 +39,7 @@ public partial class MainForm : Form
             Content = mainLayout
         };
         
+        // TODO: think of a way to present this normally
         var am2rModLayout = new DynamicLayout();
         var am2rModPage = new TabPage
         {

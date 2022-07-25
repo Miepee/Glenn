@@ -8,11 +8,12 @@ namespace AM2RPortHelper;
 
 internal static class Program
 {
-    //TODO: add "-l" flag. port launcher mods to different versions.
-    
+// TODO: implement launcher flag -u launcher
     private static int Main(string[] args)
     {
         Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version);
+        
+        PortHelper.PortLauncherMod("/home/narr/Downloads/Multitroid1_4_2VM_Linux.zip", "Windows", false, "./foo.zip");
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED*");
