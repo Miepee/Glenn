@@ -21,7 +21,7 @@ jobs:
             ARTIFACT: AM2RPortHelperCLI/bin/Release/net6.0/osx-x64/publish
           - os: windows-latest
             COMMAND: AM2RPortHelperCLI.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
-            ARTIFACT: AM2RPortHelperCLI\bin\Release\net6.0\win-x86\
+            ARTIFACT: AM2RPortHelperCLI\bin\Release\net6.0\win-x86\publish
     runs-on: ${{ matrix.os }}
     
 
@@ -63,7 +63,7 @@ jobs:
             DIR: AM2RPortHelperGUI.Mac
           - os: windows-latest
             COMMAND: AM2RPortHelperGUI.Wpf.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
-            ARTIFACT: AM2RPortHelperGUI.Wpf\bin\Release\net6.0-windows\win-x86\
+            ARTIFACT: AM2RPortHelperGUI.Wpf\bin\Release\net6.0-windows\win-x86\publish
             DIR: AM2RPortHelperGUI.Wpf
     runs-on: ${{ matrix.os }}
     
