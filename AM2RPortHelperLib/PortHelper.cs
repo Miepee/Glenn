@@ -44,7 +44,7 @@ public static partial class PortHelper
         
         var profile = Serializer.Deserialize<ProfileXML>(File.ReadAllText(extractDirectory + "/profile.xml"));
         if (profile.UsesYYC)
-            throw new NotSupportedException("Launcher Modis YYC, cannot port!");
+            throw new NotSupportedException("Launcher Mod is YYC, cannot port!");
         string currentOS = profile.OperatingSystem;
         bool isAndroidIncluded = profile.SupportsAndroid;
 
@@ -53,6 +53,11 @@ public static partial class PortHelper
             SendOutput("Target OS and Launcher OS are the same; exiting.");
             return;
         }
+
+        // TODO: Not sure if this is ever gonna be possible, since it requires one to shift back the patch.
+        // We'd need a 1.1 file to apply the patch to, run that with umtlib to shift it back, and then apply a new patch.
+        if (profile.OperatingSystem == "Mac")
+            throw new NotSupportedException("Porting Mac mods is currently not supported!");
 
         switch (targetOS)
         {
@@ -117,9 +122,9 @@ public static partial class PortHelper
 
             case "Mac":
             {
-                //TODO: write this Somewhat difficult, since it's not just a data swap, we need to run UMT on it as well to transfer the BC version n stuff
-                
-                break;
+                // TODO: Not sure if this is ever gonna be possible, since it requires one to shift up the patch.
+                // We'd need a 1.1 file to apply the patch to, run that with umtlib to shift it up, and then apply a new patch.
+                throw new NotSupportedException("Porting Mac mods is currently not supported!");
             }
         }
 
