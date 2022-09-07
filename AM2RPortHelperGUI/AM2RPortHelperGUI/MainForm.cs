@@ -91,7 +91,8 @@ public partial class MainForm : Form
             await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath, androidPath, OutputHandlerDelegate));
         if (checkboxMac.Checked.Value)
         {
-            string modName = "foo";//MessageBox.Show()
+            MessageBox.Show(this, "Currently the mod name is set as \"foo\", you need to manually correct that later! (Search for the files yoyorunner.config and Info.plist");
+            string modName = "foo";
             await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
         }
 
