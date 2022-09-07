@@ -47,15 +47,16 @@ public partial class MainForm : Form
             Content = am2rModLayout
         };
         
-        
-        Content = new TabControl
+        //TODO implement this properly and revert
+        /*Content = new TabControl
         {
             Pages =
             {
                 mainPage,
                 am2rModPage
             }
-        };
+        };*/
+        Content = mainPage;
         
         // events
         checkboxAndroid.CheckedChanged += ShouldButtonPortBeEnabled;
@@ -68,7 +69,7 @@ public partial class MainForm : Form
     // Helper functions
     private async void ButtonPortOnClick(object sender, EventArgs e)
     {
-        DisableAllElements();
+        SetDisableStatusOfAllElements(true);
 
         void OutputHandlerDelegate(string output) => Application.Instance.Invoke(() => labelProgress.Text = $"Info: {output}");
         string modZipPath = filePicker.FilePath;
@@ -97,7 +98,7 @@ public partial class MainForm : Form
         labelProgress.Text = "Done!";
         OpenFolder(currentDir);
         
-        EnableAllElements();
+        SetDisableStatusOfAllElements(false);
     }
     
     private static void OpenFolder(string path)
@@ -120,22 +121,13 @@ public partial class MainForm : Form
             buttonPort.Enabled = false;
     }
 
-    private void DisableAllElements()
+    private void SetDisableStatusOfAllElements(bool disabled)
     {
-        checkboxAndroid.Enabled = false;
-        checkboxLinux.Enabled = false;
-        checkboxMac.Enabled = false;
-        filePicker.Enabled = false;
-        buttonPort.Enabled = false;
-    }
-    
-    private void EnableAllElements()
-    {
-        checkboxAndroid.Enabled = true;
-        checkboxLinux.Enabled = true;
-        checkboxMac.Enabled = true;
-        filePicker.Enabled = true;
-        buttonPort.Enabled = true;
+        checkboxAndroid.Enabled = !disabled;
+        checkboxLinux.Enabled = !disabled;
+        checkboxMac.Enabled = !disabled;
+        filePicker.Enabled = !disabled;
+        buttonPort.Enabled = !disabled;
     }
 
     // Attributes
