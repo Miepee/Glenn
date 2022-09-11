@@ -29,8 +29,12 @@ public partial class MainForm : Form
         mainLayout.AddRow(checkboxLinux, checkboxAndroid, checkboxMac);
         mainLayout.AddSpace();
         mainLayout.EndCentered();
+        mainLayout.BeginCentered();
+        mainLayout.AddRow(labelModName, new Label { Width = 15 }, textboxModName);
+        mainLayout.AddSpace();
+        mainLayout.EndCentered();
         mainLayout.BeginVertical();
-        mainLayout.AddRange(new Label { Height = 10}, buttonPort, null);
+        mainLayout.AddRange(new Label { Height = 10 }, buttonPort, null);
         mainLayout.EndVertical();
         
         var mainPage = new TabPage
@@ -62,6 +66,7 @@ public partial class MainForm : Form
         checkboxAndroid.CheckedChanged += ShouldButtonPortBeEnabled;
         checkboxLinux.CheckedChanged += ShouldButtonPortBeEnabled;
         checkboxMac.CheckedChanged += ShouldButtonPortBeEnabled;
+        textboxModName.TextChanged += ShouldButtonPortBeEnabled;
         filePicker.FilePathChanged += ShouldButtonPortBeEnabled;
         buttonPort.Click += ButtonPortOnClick;
     }
@@ -88,11 +93,15 @@ public partial class MainForm : Form
         if (checkboxLinux.Checked.Value)
             await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath,linuxPath, OutputHandlerDelegate));
         if (checkboxAndroid.Checked.Value)
-            await Task.Run(() =>PortHelper.PortWindowsToAndroid(modZipPath, androidPath, null, OutputHandlerDelegate));
+        {
+            string modName = null;
+            if (!String.IsNullOrWhiteSpace(textboxModName.Text)) modName = textboxModName.Text;
+            
+            await Task.Run(() => PortHelper.PortWindowsToAndroid(modZipPath, androidPath, modName, OutputHandlerDelegate));
+        }
         if (checkboxMac.Checked.Value)
         {
-            MessageBox.Show(this, "Currently the mod name is set as \"foo\", you need to manually correct that later! (Search for the files yoyorunner.config and Info.plist");
-            string modName = "foo";
+            string modName = textboxModName.Text;
             await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
         }
 
@@ -114,9 +123,12 @@ public partial class MainForm : Form
     
     private void ShouldButtonPortBeEnabled(object sender, EventArgs e)
     {
-        // any checkbox + selected mod
-        if ((checkboxAndroid.Checked.Value || checkboxLinux.Checked.Value || checkboxMac.Checked.Value) 
-            && !String.IsNullOrWhiteSpace(filePicker.FilePath))
+        // there needs to be a selected mod + any checkbox (if mac, then there needs to be a name)
+        if ((!String.IsNullOrWhiteSpace(filePicker.FilePath) 
+            && ((checkboxAndroid.Checked.Value && !checkboxMac.Checked.Value)) 
+            || (checkboxLinux.Checked.Value && !checkboxMac.Checked.Value) 
+            || (checkboxMac.Checked.Value && !String.IsNullOrWhiteSpace(textboxModName.Text))))
+            
             buttonPort.Enabled = true;
         else
             buttonPort.Enabled = false;
@@ -129,6 +141,7 @@ public partial class MainForm : Form
         checkboxMac.Enabled = !disabled;
         filePicker.Enabled = !disabled;
         buttonPort.Enabled = !disabled;
+        textboxModName.Enabled = !disabled;
     }
 
     // Attributes
@@ -153,6 +166,12 @@ public partial class MainForm : Form
     {
         Text = "Mac"
     };
+
+    private readonly Label labelModName = new Label
+    {
+        Text = "Enter mod name:\n(Required for Mac!)"
+    };
+    private readonly TextBox textboxModName = new TextBox();
 
     private readonly Button buttonPort = new Button
     {

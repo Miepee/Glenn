@@ -199,6 +199,7 @@ public static partial class PortHelper
         Directory.Delete(assetsDir, true);
     }
 
+    // TODO: try to figure out if its possible to extract the name from the data.win file and then just offer a "use custom save directory" option that decides whether to use it or not.
     public static void PortWindowsToAndroid(string inputRawZipPath, string outputRawApkPath, string modName = null, OutputHandlerDelegate outputDelegate = null)
     {
         outputHandler = outputDelegate;
