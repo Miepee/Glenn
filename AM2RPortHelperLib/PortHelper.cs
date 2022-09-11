@@ -7,6 +7,9 @@ namespace AM2RPortHelperLib;
 
 public static partial class PortHelper
 {    
+    /// <summary>
+    /// The current version of <see cref="AM2RPortHelperLib"/>.
+    /// </summary>
     public const string Version = "1.3";
     public delegate void OutputHandlerDelegate(string output);
 
@@ -20,8 +23,19 @@ public static partial class PortHelper
             Console.WriteLine(output);
     }
 
+    /// <summary>
+    /// A temporary directory
+    /// </summary>
     private static readonly string tmp = Path.GetTempPath();
+    
+    /// <summary>
+    /// The current directory of the AM2RPortHelper program.
+    /// </summary>
     private static readonly string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+    
+    /// <summary>
+    /// The "utils" folder that's shipped with the AM2RPortHelper.
+    /// </summary>
     private static readonly string utilDir = currentDir + "/utils";
 
     public static void PortLauncherMod(string inputLauncherZipPath, string targetOS, bool includeAndroid, string outputLauncherZipPath, OutputHandlerDelegate outputDelegate = null)

@@ -6,6 +6,10 @@ namespace AM2RPortHelperLib;
 
 public static partial class PortHelper
 {
+    /// <summary>
+    /// Recursively lowercases all files and folders from a specified directory.
+    /// </summary>
+    /// <param name="directory">The path to the directory whose contents should be lowercased.</param>
     private static void LowercaseFolder(string directory)
     {
         DirectoryInfo dir = new DirectoryInfo(directory);
@@ -19,6 +23,7 @@ public static partial class PortHelper
         foreach(var subDir in dir.GetDirectories())
         {
             if (subDir.Name == subDir.Name.ToLower()) continue;
+            // ReSharper disable once PossibleNullReferenceException - since this is a subdirectory, it always has a parent
             subDir.MoveTo(subDir.Parent.FullName + "/" + subDir.Name.ToLower());
             LowercaseFolder(subDir.FullName);
         }
@@ -56,6 +61,18 @@ public static partial class PortHelper
         }
     }
     
+    /// <summary>
+    /// Resizes an <see cref="Image"/>, resizes it via Nearest Neighbor to a specified dimension, and then saves it to a specified path.
+    /// </summary>
+    /// <param name="icon">The image to resize and save.</param>
+    /// <param name="dimensions">The dimensions <paramref name="icon"/> should be resized to.</param>
+    /// <param name="filePath">The filepath where the resized image should be saved to.</param>
+    /// <example>
+    /// <code>
+    /// Image icon = Image.Load("icon.png");
+    /// SaveAndroidIcon(icon, 128, "128.png");
+    /// </code>
+    /// </example>
     private static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
     {
         Image picture = icon;
@@ -63,6 +80,11 @@ public static partial class PortHelper
         picture.SaveAsPng(filePath);
     }
     
+    /// <summary>
+    /// Calculates the SHA256 hash of a specified file.
+    /// </summary>
+    /// <param name="filename">The full filepath to a file whose SHA256 hash should be calculated.</param>
+    /// <returns>The SHA256 hash of <see cref="filename"/>.</returns>
     private static string CalculateSHA256(string filename)
     {
         // Check if file exists first
