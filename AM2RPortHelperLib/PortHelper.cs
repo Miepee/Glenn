@@ -199,7 +199,7 @@ public static partial class PortHelper
         Directory.Delete(assetsDir, true);
     }
 
-    public static void PortWindowsToAndroid(string inputRawZipPath, string outputRawApkPath, OutputHandlerDelegate outputDelegate = null)
+    public static void PortWindowsToAndroid(string inputRawZipPath, string outputRawApkPath, string modName = null, OutputHandlerDelegate outputDelegate = null)
     {
         outputHandler = outputDelegate;
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
@@ -265,6 +265,15 @@ public static partial class PortHelper
         SaveAndroidIcon(orig, 144, resPath + "/drawable-xxhdpi-v4/icon.png");
         SaveAndroidIcon(orig, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
 
+        // If a custom name was given, replace it.
+        //TODO: handle errors
+        if (modName != null)
+        {
+            string manifestFile = File.ReadAllText(apkDir + "/AndroidManifest.xml");
+            manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", "com.companyname." + modName);
+            File.WriteAllText(apkDir + "/AndroidManifest.xml", manifestFile);
+        }
+        
         // Run APKTOOL and build the apk
         SendOutput("Rebuild apk...");
         pStartInfo = new ProcessStartInfo

@@ -20,7 +20,7 @@ internal static class Program
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
-        var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac mod. Required for the Mac option, has no effect on anything else.");
+        var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac or Android mod. Required for the Mac option, and optional for the Android version. Has no effect on anything else.");
 
         RootCommand rootCommand = new RootCommand
         {
@@ -62,7 +62,7 @@ internal static class Program
         }
         if (androidPath is not null)
         {
-            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName);
+            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName, string.IsNullOrWhiteSpace(modName) ? null : modName);
         }
         if (macPath is not null)
         {
@@ -73,7 +73,7 @@ internal static class Program
             }
             PortHelper.PortWindowsToMac(inputModPath.FullName, macPath.FullName, modName);
         }
-        Console.WriteLine("Done");
+        Console.WriteLine("Done.");
     }
     private static void RunInteractive()
     {
