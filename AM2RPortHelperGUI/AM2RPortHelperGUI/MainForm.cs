@@ -60,7 +60,7 @@ public partial class MainForm : Form
                 am2rModPage
             }
         };*/
-        Content = mainPage;
+        Content = mainLayout;
         
         // events
         checkboxAndroid.CheckedChanged += ShouldButtonPortBeEnabled;
