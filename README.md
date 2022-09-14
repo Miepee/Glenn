@@ -3,7 +3,7 @@ A simple tool to make porting Windows builds of self-created AM2R-Mods to other 
 You need to have at least .NET Core 6 installed in order to run this.
  
 ## How do I use this?
-First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created, if you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just drag-n-drop it into this tool and, select if you want to have a port made for Linux, Android or Mac.  
+First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created, if you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just feed it into this tool and, select if you want to have a port made for Linux, Android or Mac.  
 It will then create a new zip/apk, which can be used for the [AM2RModPacker](https://github.com/AM2R-Community-Developers/AM2RModpacker-Mac), in the directory next to the program. For the Mac build, you need to use my ModPacker-Mac version which can be found [here](https://github.com/AM2R-Community-Developers/AM2RModpacker-Mac).
 
 To create Android builds, you need to have Java installed.
