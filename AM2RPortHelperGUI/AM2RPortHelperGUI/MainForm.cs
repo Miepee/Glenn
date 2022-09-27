@@ -30,6 +30,10 @@ public partial class MainForm : Form
         mainLayout.AddSpace();
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
+        mainLayout.AddRow(checkboxAndroidRequiresInternet);
+        mainLayout.AddSpace();
+        mainLayout.EndCentered();
+        mainLayout.BeginCentered();
         mainLayout.AddRow(labelModName, new Label { Width = 15 }, textboxModName);
         mainLayout.AddSpace();
         mainLayout.EndCentered();
@@ -64,6 +68,7 @@ public partial class MainForm : Form
         
         // events
         checkboxAndroid.CheckedChanged += ShouldButtonPortBeEnabled;
+        checkboxAndroidRequiresInternet.CheckedChanged += ShouldButtonPortBeEnabled;
         checkboxLinux.CheckedChanged += ShouldButtonPortBeEnabled;
         checkboxMac.CheckedChanged += ShouldButtonPortBeEnabled;
         textboxModName.TextChanged += ShouldButtonPortBeEnabled;
@@ -97,8 +102,8 @@ public partial class MainForm : Form
             
             string modName = null;
             if (!String.IsNullOrWhiteSpace(textboxModName.Text)) modName = textboxModName.Text;
-            
-            await Task.Run(() => PortHelper.PortWindowsToAndroid(modZipPath, androidPath, modName, OutputHandlerDelegate));
+            bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
+            await Task.Run(() => PortHelper.PortWindowsToAndroid(modZipPath, androidPath, modName, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
@@ -141,6 +146,7 @@ public partial class MainForm : Form
     private void SetDisableStatusOfAllElements(bool disabled)
     {
         checkboxAndroid.Enabled = !disabled;
+        checkboxAndroidRequiresInternet.Enabled = !disabled;
         checkboxLinux.Enabled = !disabled;
         checkboxMac.Enabled = !disabled;
         filePicker.Enabled = !disabled;
@@ -165,6 +171,10 @@ public partial class MainForm : Form
     private readonly CheckBox checkboxAndroid = new CheckBox
     {
         Text = "Android"
+    };
+    private readonly CheckBox checkboxAndroidRequiresInternet = new CheckBox
+    {
+        Text = "Requires internet (Android only)"
     };
     private readonly CheckBox checkboxMac = new CheckBox
     {

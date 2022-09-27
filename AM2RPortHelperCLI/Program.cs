@@ -21,6 +21,7 @@ internal static class Program
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
         var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac or Android mod. Required for the Mac option, and optional for the Android version. Has no effect on anything else.");
+        var internetOption = new Option<bool>(new[] { "-w", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect to other OS.");
 
         RootCommand rootCommand = new RootCommand
         {
@@ -29,9 +30,10 @@ internal static class Program
             linuxOption,
             androidOption,
             macOption,
-            nameOption
+            nameOption,
+            internetOption
         };
-        rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption, macOption, nameOption);
+        rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption, macOption, nameOption, internetOption);
         
         
         return rootCommand.Invoke(args);
@@ -43,7 +45,7 @@ internal static class Program
         */
 
     }
-    private static void RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath, string modName)
+    private static void RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath, string modName, bool usesInternet)
     {
         if (interactive)
         {
@@ -62,7 +64,7 @@ internal static class Program
         }
         if (androidPath is not null)
         {
-            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName, string.IsNullOrWhiteSpace(modName) ? null : modName);
+            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName, string.IsNullOrWhiteSpace(modName) ? null : modName, usesInternet);
         }
         if (macPath is not null)
         {
@@ -118,7 +120,7 @@ internal static class Program
                     if (linuxSelected || androidSelected || macSelected)
                         invalidOS = false;
                     else
-                        Console.WriteLine("You have to at least select one OS!");
+                        Console.WriteLine("You have to select at least one OS!");
                     break;
             }
         } while (invalidOS);
@@ -138,8 +140,27 @@ internal static class Program
             
         if (linuxSelected)
             PortHelper.PortWindowsToLinux(modZipPath,linuxPath);
-        if (androidSelected) 
-            PortHelper.PortWindowsToAndroid(modZipPath, androidPath);
+        
+        if (androidSelected)
+        {
+            // TODO: ask for modname
+            bool? internetSelected = null;
+            do
+            {
+                Console.WriteLine("Does your mod require internet access (y/n)?");
+                var input = Console.ReadKey().Key;
+                switch (input)
+                {
+                    case ConsoleKey.Y: internetSelected = true; break;
+                    case ConsoleKey.N: internetSelected = false; break;
+                    default: Console.WriteLine("Invalid input!"); break;
+                }
+                Console.WriteLine();
+            }
+            while (internetSelected == null);
+
+            PortHelper.PortWindowsToAndroid(modZipPath, androidPath, null, internetSelected.Value);
+        }
         if (macSelected)
         {
             Console.WriteLine("Mac requires a name! Please enter one (no special characters!):");
