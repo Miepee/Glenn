@@ -24,9 +24,10 @@ public partial class MainForm : Form
                             filePicker,
                             labelProgress);
         mainLayout.EndVertical();
+        mainLayout.AddSpace();
         mainLayout.BeginCentered();
         mainLayout.AddRow(new Label { Height = 15 });
-        mainLayout.AddRow(null, labelOSHeader, null);
+        mainLayout.AddRow(labelOSHeader);
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxLinux, checkboxAndroid, checkboxMac);
@@ -34,16 +35,15 @@ public partial class MainForm : Form
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
         mainLayout.AddRow(new Label { Height = 15 });
-        mainLayout.AddRow(null, labelOptionsHeader, null);
+        mainLayout.AddRow(labelOptionsHeader);
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxAndroidRequiresInternet);
-        mainLayout.AddSpace();
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
         mainLayout.AddRow(labelModName, new Label { Width = 15 }, textboxModName);
-        mainLayout.AddSpace();
         mainLayout.EndCentered();
+        mainLayout.AddSpace();
         mainLayout.BeginVertical();
         mainLayout.AddRange(new Label { Height = 10 }, buttonPort, null);
         mainLayout.EndVertical();
