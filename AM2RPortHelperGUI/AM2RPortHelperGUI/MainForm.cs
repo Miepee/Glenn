@@ -82,18 +82,19 @@ public partial class MainForm : Form
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
         string macPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_MACOS.zip";
-        
-        if (File.Exists(linuxPath))
-            File.Delete(linuxPath);
-        if (File.Exists(androidPath))
-            File.Delete(androidPath);
-        if (File.Exists(macPath))
-            File.Delete(macPath);
-        
+
         if (checkboxLinux.Checked.Value)
-            await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath,linuxPath, OutputHandlerDelegate));
+        {
+            if (File.Exists(linuxPath))
+                File.Delete(linuxPath);
+            
+            await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath, linuxPath, OutputHandlerDelegate));
+        }
         if (checkboxAndroid.Checked.Value)
         {
+            if (File.Exists(androidPath))
+                File.Delete(androidPath);
+            
             string modName = null;
             if (!String.IsNullOrWhiteSpace(textboxModName.Text)) modName = textboxModName.Text;
             
@@ -101,6 +102,9 @@ public partial class MainForm : Form
         }
         if (checkboxMac.Checked.Value)
         {
+            if (File.Exists(macPath))
+                File.Delete(macPath);
+            
             string modName = textboxModName.Text;
             await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
         }
