@@ -14,7 +14,7 @@ public partial class MainForm : Form
     public MainForm()
     {
         Title = $"AM2RPortHelper - v{PortHelper.Version}";
-        MinimumSize = new Size(250, 280);
+        MinimumSize = new Size(260, 280);
 
         
         var mainLayout = new DynamicLayout();
@@ -40,6 +40,7 @@ public partial class MainForm : Form
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxAndroidRequiresInternet);
         mainLayout.EndCentered();
+        mainLayout.AddRow(new Label() { Height = 5 });
         mainLayout.BeginCentered();
         mainLayout.AddRow(labelModName, new Label { Width = 15 }, textboxModName);
         mainLayout.EndCentered();
@@ -47,7 +48,7 @@ public partial class MainForm : Form
         mainLayout.BeginVertical();
         mainLayout.AddRange(new Label { Height = 10 }, buttonPort, null);
         mainLayout.EndVertical();
-        
+
         var mainPage = new TabPage
         {
             Text = "Raw Mods",
@@ -201,11 +202,15 @@ public partial class MainForm : Form
     };
     private readonly CheckBox checkboxAndroidRequiresInternet = new CheckBox
     {
-        Text = "Requires internet (Android only)"
+        Text = "Requires internet (See tooltip for info)",
+        ToolTip = "Only affects Android. If your mod interacts with the internet in any way (such as multiplayer), you should check this," +
+                  "as otherwise internet functions won't work."
     };
     private readonly Label labelModName = new Label
     {
-        Text = "Enter mod name:\n(Required for Mac!)"
+        Text = "Enter mod name:\n(See tooltip for info)",
+        ToolTip = "The mod name is required for Mac, and optional for Android. It does not have any affect on other OS.\n" +
+                  "For Mac, it is used as the display name when the application is started. For Android, the name is used for the save location."
     };
     private readonly TextBox textboxModName = new TextBox();
 
