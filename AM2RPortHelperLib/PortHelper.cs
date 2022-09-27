@@ -10,7 +10,7 @@ public static partial class PortHelper
     /// <summary>
     /// The current version of <see cref="AM2RPortHelperLib"/>.
     /// </summary>
-    public const string Version = "1.3";
+    public const string Version = "1.4";
     public delegate void OutputHandlerDelegate(string output);
 
     private static OutputHandlerDelegate outputHandler;
@@ -214,7 +214,7 @@ public static partial class PortHelper
     }
 
     // TODO: try to figure out if its possible to extract the name from the data.win file and then just offer a "use custom save directory" option that decides whether to use it or not.
-    public static void PortWindowsToAndroid(string inputRawZipPath, string outputRawApkPath, string modName = null, OutputHandlerDelegate outputDelegate = null)
+    public static void PortWindowsToAndroid(string inputRawZipPath, string outputRawApkPath, string modName = null, OutputHandlerDelegate outputDelegate = null, bool usesInternet = false)
     {
         outputHandler = outputDelegate;
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
@@ -286,6 +286,14 @@ public static partial class PortHelper
         {
             string manifestFile = File.ReadAllText(apkDir + "/AndroidManifest.xml");
             manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", "com.companyname." + modName);
+            File.WriteAllText(apkDir + "/AndroidManifest.xml", manifestFile);
+        }
+
+        // Add internet permission, keying off the Bluetooth permission.
+        if (usesInternet)
+        {
+            string manifestFile = File.ReadAllText(apkDir + "/AndroidManifest.xml");
+            manifestFile = manifestFile.Replace("<uses-permission android:name=\"android.permission.BLUETOOTH\"/>", "<uses-permission android:name=\"android.permission.INTERNET\"/>\r\n    <uses-permission android:name=\"android.permission.BLUETOOTH\"/>");
             File.WriteAllText(apkDir + "/AndroidManifest.xml", manifestFile);
         }
         
