@@ -1,6 +1,11 @@
 ﻿using System;
 using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Help;
+using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using AM2RPortHelperLib;
 
 namespace AM2RPortHelper;
@@ -9,21 +14,23 @@ namespace AM2RPortHelper;
 internal static class Program
 {
 // TODO: implement launcher flag -u launcher
+
+    private static void OutputHandlerDelegate(string output) => Console.WriteLine(output);
+
     private static int Main(string[] args)
     {
-        Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version);
-        
         //PortHelper.PortLauncherMod("/home/narr/Downloads/Multitroid1_4_2VM_Linux.zip", "Windows", false, "./foo.zip");
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
-        var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED*");
+        var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
         var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac or Android mod. Required for the Mac option, and optional for the Android version. Has no effect on anything else.");
         var internetOption = new Option<bool>(new[] { "-w", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect to other OS.");
+        var verboseOption = new Option<bool>(new[] { "-v", "--verbose" }, "Whether to show verbose output.");
 
-        RootCommand rootCommand = new RootCommand
+        RootCommand rootCommand = new RootCommand("A utility to port Windows AM2R Mods to other operating systems.")
         {
             interactiveOption,
             fileOption,
@@ -33,11 +40,18 @@ internal static class Program
             nameOption,
             internetOption
         };
-        rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption, macOption, nameOption, internetOption);
+        rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption,
+                               macOption, nameOption, internetOption, verboseOption);
+
+
+        var parser = new CommandLineBuilder(rootCommand)
+            .UseDefaults()
+            .UseHelp(ctx => { ctx.HelpBuilder.CustomizeLayout(_ => HelpBuilder.Default.GetLayout().Prepend(_ => Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version)));})
+            .Build();
         
-        
-        return rootCommand.Invoke(args);
-        
+        return parser.Invoke(args);
+        //return rootCommand.Invoke(args);
+
         /*
          TODO: show this somewhere? maybe?
         Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
@@ -45,37 +59,47 @@ internal static class Program
         */
 
     }
-    private static void RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath, string modName, bool usesInternet)
+#pragma warning disable CS1998
+    private static async Task<int> RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath,
+                                              string modName, bool usesInternet, bool beVerbose)
+#pragma warning restore CS1998
     {
+        if (interactive || beVerbose)
+            Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version);
+        
         if (interactive)
         {
             RunInteractive();
-            return;
+            return 0;
         }
+        
         if (!IsValidInputZip(inputModPath))
         {
             Console.Error.WriteLine("Input path does not exist, or does not point to a zip file!");
-            return;
+            return 1;
         }
 
         if (linuxPath is not null)
         {
-            PortHelper.PortWindowsToLinux(inputModPath.FullName, linuxPath.FullName);
+            PortHelper.PortWindowsToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (androidPath is not null)
         {
-            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName, string.IsNullOrWhiteSpace(modName) ? null : modName, usesInternet);
+            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName,
+                                            String.IsNullOrWhiteSpace(modName) ? null : modName, usesInternet, beVerbose ? OutputHandlerDelegate : null);
         }
         if (macPath is not null)
         {
             if (modName is null)
             {
                 Console.Error.WriteLine("Mac option was chosen but mod name was not given!");
-                return;
+                return 1;
             }
-            PortHelper.PortWindowsToMac(inputModPath.FullName, macPath.FullName, modName);
+            PortHelper.PortWindowsToMac(inputModPath.FullName, macPath.FullName, modName, beVerbose ? OutputHandlerDelegate : null);
         }
-        Console.WriteLine("Done.");
+        if (beVerbose)
+            Console.WriteLine("Done.");
+        return 0;
     }
     private static void RunInteractive()
     {
@@ -136,7 +160,7 @@ internal static class Program
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            PortHelper.PortWindowsToLinux(modZipPath, linuxPath);
+            PortHelper.PortWindowsToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
         }
 
         if (androidSelected)
@@ -160,7 +184,7 @@ internal static class Program
             }
             while (internetSelected == null);
 
-            PortHelper.PortWindowsToAndroid(modZipPath, androidPath, null, internetSelected.Value);
+            PortHelper.PortWindowsToAndroid(modZipPath, androidPath, null, internetSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
@@ -169,7 +193,7 @@ internal static class Program
             
             Console.WriteLine("Mac requires a name! Please enter one (no special characters!):");
             string modName = Console.ReadLine();
-            PortHelper.PortWindowsToMac(modZipPath, macPath, modName);
+            PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate);
         }
         
         Console.WriteLine("Successfully finished!");
@@ -182,6 +206,6 @@ internal static class Program
 
     private static bool IsValidInputZip(FileInfo path)
     {
-        return path is not null && IsValidInputZip(path.FullName);
+        return IsValidInputZip(path?.FullName);
     }
 }

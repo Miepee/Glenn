@@ -17,10 +17,7 @@ public static partial class PortHelper
     
     private static void SendOutput(string output)
     {
-        if (outputHandler is not null)
-            outputHandler.Invoke(output);
-        else
-            Console.WriteLine(output);
+        outputHandler?.Invoke(output);
     }
 
     /// <summary>
@@ -429,6 +426,4 @@ public static partial class PortHelper
         // Clean up
         Directory.Delete(baseTempDirectory, true);
     }
-
-    
 }
