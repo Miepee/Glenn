@@ -14,20 +14,27 @@ public partial class MainForm : Form
     public MainForm()
     {
         Title = $"AM2RPortHelper - v{PortHelper.Version}";
-        MinimumSize = new Size(200, 200);
+        MinimumSize = new Size(250, 280);
 
         
         var mainLayout = new DynamicLayout();
         mainLayout.BeginVertical();
         mainLayout.AddRange(labelSelectMod,
-                            new Label { Height = 5 }, 
-                            filePicker, 
-                            labelProgress,
-                            new Label { Height = 10 });
+                            new Label { Height = 5 },
+                            filePicker,
+                            labelProgress);
         mainLayout.EndVertical();
+        mainLayout.BeginCentered();
+        mainLayout.AddRow(new Label { Height = 15 });
+        mainLayout.AddRow(null, labelOSHeader, null);
+        mainLayout.EndCentered();
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxLinux, checkboxAndroid, checkboxMac);
         mainLayout.AddSpace();
+        mainLayout.EndCentered();
+        mainLayout.BeginCentered();
+        mainLayout.AddRow(new Label { Height = 15 });
+        mainLayout.AddRow(null, labelOptionsHeader, null);
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxAndroidRequiresInternet);
@@ -163,7 +170,17 @@ public partial class MainForm : Form
     {
         Filters = { new FileFilter("Zip file", "*.zip") }
     };
+    private readonly Label labelProgress = new Label
+    {
+        Text = "Info: (currently no ports in progress)"
+    };
+    
 
+    private readonly Label labelOSHeader = new Label
+    {
+        Text = "Choose the OS to port to",
+        Font = new Font(SystemFont.Bold)
+    };
     private readonly CheckBox checkboxLinux = new CheckBox
     {
         Text = "Linux"
@@ -172,15 +189,20 @@ public partial class MainForm : Form
     {
         Text = "Android"
     };
-    private readonly CheckBox checkboxAndroidRequiresInternet = new CheckBox
-    {
-        Text = "Requires internet (Android only)"
-    };
     private readonly CheckBox checkboxMac = new CheckBox
     {
         Text = "Mac"
     };
 
+    private readonly Label labelOptionsHeader = new Label
+    {
+        Text = "Choose port options",
+        Font = new Font(SystemFont.Bold)
+    };
+    private readonly CheckBox checkboxAndroidRequiresInternet = new CheckBox
+    {
+        Text = "Requires internet (Android only)"
+    };
     private readonly Label labelModName = new Label
     {
         Text = "Enter mod name:\n(Required for Mac!)"
@@ -191,10 +213,5 @@ public partial class MainForm : Form
     {
         Text = "Port!",
         Enabled = false
-    };
-
-    private readonly Label labelProgress = new Label
-    {
-        Text = "Info: "
     };
 }
