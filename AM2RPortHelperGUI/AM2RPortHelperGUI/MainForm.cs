@@ -101,8 +101,8 @@ public partial class MainForm : Form
         {
             string modName = null;
             if (!String.IsNullOrWhiteSpace(textboxModName.Text)) modName = textboxModName.Text;
-
-            await Task.Run(() => PortHelper.PortWindowsToAndroid(modZipPath, androidPath, modName, checkboxAndroidRequiresInternet.Checked.Value, OutputHandlerDelegate));
+            bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
+            await Task.Run(() => PortHelper.PortWindowsToAndroid(modZipPath, androidPath, modName, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
