@@ -130,19 +130,20 @@ internal static class Program
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
         string macPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_MACOS.zip";
-            
-        if (File.Exists(linuxPath))
-            File.Delete(linuxPath);
-        if (File.Exists(androidPath))
-            File.Delete(androidPath);
-        if (File.Exists(macPath))
-            File.Delete(macPath);
-            
+
         if (linuxSelected)
-            PortHelper.PortWindowsToLinux(modZipPath,linuxPath);
-        
+        {
+            if (File.Exists(linuxPath))
+                File.Delete(linuxPath);
+            
+            PortHelper.PortWindowsToLinux(modZipPath, linuxPath);
+        }
+
         if (androidSelected)
         {
+            if (File.Exists(androidPath))
+                File.Delete(androidPath);
+            
             // TODO: ask for modname
             bool? internetSelected = null;
             do
@@ -163,6 +164,9 @@ internal static class Program
         }
         if (macSelected)
         {
+            if (File.Exists(macPath))
+                File.Delete(macPath);
+            
             Console.WriteLine("Mac requires a name! Please enter one (no special characters!):");
             string modName = Console.ReadLine();
             PortHelper.PortWindowsToMac(modZipPath, macPath, modName);
