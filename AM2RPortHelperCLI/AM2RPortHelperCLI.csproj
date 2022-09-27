@@ -6,6 +6,7 @@
     <RollForward>LatestMajor</RollForward>
     <LangVersion>10</LangVersion>
     <RootNamespace>AM2RPortHelper</RootNamespace>
+    <!-- TODO: is it possible to change the below value at runtime but before system.command picks it up? -->
     <InformationalVersion>1.4.0</InformationalVersion>
   </PropertyGroup>
 
