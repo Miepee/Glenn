@@ -19,7 +19,7 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        //PortHelper.PortLauncherMod("/home/narr/Downloads/Multitroid1_4_2VM_Linux.zip", "Windows", false, "./foo.zip");
+        //PortHelper.PortLauncherMod("/home/narr/Downloads/UnofficialMultitroidAPKTest1_6a.zip", "Linux", true, "./foo.zip");
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
@@ -199,6 +199,7 @@ internal static class Program
         Console.WriteLine("Successfully finished!");
     }
     
+    // TODO: we should probably check for magic header instead of just file extension
     private static bool IsValidInputZip(string path)
     {
         return path != null && (File.Exists(path) || Path.GetExtension(path).ToLower() == ".zip");

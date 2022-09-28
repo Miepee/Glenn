@@ -282,12 +282,40 @@ public static partial class PortHelper
         if (modName != null || usesInternet)
         {
             string manifestFile = File.ReadAllText(apkDir + "/AndroidManifest.xml");
-            
-            // If a custom name was given, replace it.
-            //TODO: handle errors
+
+            // If a custom name was given, replace it everywhere.
+            //TODO: handle errors:
+            // A-Z, a-z, digits, underscore and needs to start with letters
             if (modName != null)
-                manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", "com.companyname." + modName);
-            
+            {
+                // first in the manifest
+                manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
+                
+                // then in the rest
+                // TODO: create some sort of function for it to avoid copy paste
+                foreach (var file in Directory.GetFiles($"{apkDir}/smali/com/yoyogames/runner"))
+                {
+                    var content = File.ReadAllText(file);
+                    content = content.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}")
+                        .Replace("com/companyname/AM2RWrapper", $"com/companyname/{modName}");
+                    File.WriteAllText(file, content);
+                }
+                var am2rWrapperDir = new DirectoryInfo($"{apkDir}/smali/com/companyname/AM2RWrapper");
+                foreach (var file in am2rWrapperDir.GetFiles())
+                {
+                    var content = File.ReadAllText(file.FullName);
+                    content = content.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}")
+                        .Replace("com/companyname/AM2RWrapper", $"com/companyname/{modName}")
+                        .Replace("com$companyname$AM2RWrapper", $"com$companyname${modName}");
+                    File.WriteAllText(file.FullName, content);
+                }
+                am2rWrapperDir.MoveTo($"{apkDir}/smali/com/companyname/{modName}");
+
+                var layoutContent = File.ReadAllText($"{apkDir}/res/layout/main.xml");
+                layoutContent = layoutContent.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
+                File.WriteAllText($"{apkDir}/res/layout/main.xml", layoutContent);
+            }
+
             // Add internet permission, keying off the Bluetooth permission.
             if (usesInternet)
             {
