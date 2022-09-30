@@ -5,6 +5,13 @@ using SixLabors.ImageSharp;
 
 namespace AM2RPortHelperLib;
 
+public enum LauncherModTargets
+{
+    Windows,
+    Linux,
+    Mac
+}
+
 public static partial class PortHelper
 {    
     /// <summary>
@@ -14,7 +21,7 @@ public static partial class PortHelper
     public delegate void OutputHandlerDelegate(string output);
 
     private static OutputHandlerDelegate outputHandler;
-    
+
     private static void SendOutput(string output)
     {
         outputHandler?.Invoke(output);
@@ -35,7 +42,17 @@ public static partial class PortHelper
     /// </summary>
     private static readonly string utilDir = currentDir + "/utils";
 
-    public static void PortLauncherMod(string inputLauncherZipPath, string targetOS, bool includeAndroid, string outputLauncherZipPath, OutputHandlerDelegate outputDelegate = null)
+    /// <summary>
+    /// Ports a Mod zip intended to be installed via the AM2RLauncher to other operating systems.
+    /// </summary>
+    /// <param name="inputLauncherZipPath">The path to the AM2RLauncher mod zip that should be ported.</param>
+    /// <param name="targetOS">The target operating system to port the </param>
+    /// <param name="includeAndroid">Whether Android should be inlcuded in the port.</param>
+    /// <param name="outputLauncherZipPath">The path where the ported AM2RLauncher mod zip should be saved.</param>
+    /// <param name="outputDelegate">The function that should handle in-progress output messages.</param>
+    /// <exception cref="NotSupportedException">WIP</exception>
+    /// TODO: other exceptions
+    public static void PortLauncherMod(string inputLauncherZipPath, LauncherModTargets targetOS, bool includeAndroid, string outputLauncherZipPath, OutputHandlerDelegate outputDelegate = null)
     {
         outputHandler = outputDelegate;  
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputLauncherZipPath);
@@ -59,7 +76,7 @@ public static partial class PortHelper
         string currentOS = profile.OperatingSystem;
         bool isAndroidIncluded = profile.SupportsAndroid;
 
-        if (targetOS == profile.OperatingSystem)
+        if (targetOS.ToString() == profile.OperatingSystem)
         {
             SendOutput("Target OS and Launcher OS are the same; exiting.");
             return;
@@ -72,7 +89,7 @@ public static partial class PortHelper
 
         switch (targetOS)
         {
-            case "Windows":
+            case LauncherModTargets.Windows:
             {
                 File.Move(extractDirectory + "/game.xdelta", extractDirectory + "/data.xdelta");
                 
@@ -100,7 +117,7 @@ public static partial class PortHelper
                 break;
             }
             
-            case "Linux":
+            case LauncherModTargets.Linux:
             {
                 if (currentOS == "Windows")
                     File.Move(extractDirectory + "/data.xdelta", extractDirectory + "/game.xdelta");
@@ -131,12 +148,13 @@ public static partial class PortHelper
                 break;
             }
 
-            case "Mac":
+            case LauncherModTargets.Mac:
             {
                 // TODO: Not sure if this is ever gonna be possible, since it requires one to shift up the patch.
                 // We'd need a 1.1 file to apply the patch to, run that with umtlib to shift it up, and then apply a new patch.
                 throw new NotSupportedException("Porting Mac mods is currently not supported!");
             }
+            default: throw new ArgumentOutOfRangeException(nameof(targetOS), targetOS, "Unknown target to port to!");
         }
 
         if (!includeAndroid)
@@ -145,6 +163,7 @@ public static partial class PortHelper
                 File.Delete(extractDirectory + "/droid.xdelta");
             if (Directory.Exists(extractDirectory + "/android")) 
                 Directory.Delete(extractDirectory + "/android", true);
+            profile.SupportsAndroid = false;
         }
         else
         {
@@ -153,6 +172,7 @@ public static partial class PortHelper
             {
                 //TODO: see above         
             }
+            profile.SupportsAndroid = true;
         }
         
         //zip the result
