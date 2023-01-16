@@ -13,7 +13,7 @@ public partial class MainForm : Form
 {
     public MainForm()
     {
-        Title = $"AM2RPortHelper - v{PortHelper.Version}";
+        Title = $"AM2RPortHelper - v{Core.Version}";
         MinimumSize = new Size(260, 280);
 
         
@@ -101,7 +101,7 @@ public partial class MainForm : Form
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            await Task.Run(() => PortHelper.PortWindowsToLinux(modZipPath, linuxPath, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate));
         }
         if (checkboxAndroid.Checked.Value)
         {
@@ -111,7 +111,7 @@ public partial class MainForm : Form
             string modName = null;
             if (!String.IsNullOrWhiteSpace(textboxModName.Text)) modName = textboxModName.Text;
             bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
-            await Task.Run(() => PortHelper.PortWindowsToAndroid(modZipPath, androidPath, modName, useInternet, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, modName, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
@@ -119,7 +119,7 @@ public partial class MainForm : Form
                 File.Delete(macPath);
             
             string modName = textboxModName.Text;
-            await Task.Run(() => PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
         }
 
         labelProgress.Text = "Done!";

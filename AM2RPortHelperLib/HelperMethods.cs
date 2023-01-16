@@ -4,13 +4,13 @@ using SixLabors.ImageSharp.Processing;
 
 namespace AM2RPortHelperLib;
 
-public static partial class PortHelper
+public static class HelperMethods
 {
     /// <summary>
     /// Recursively lowercases all files and folders from a specified directory.
     /// </summary>
     /// <param name="directory">The path to the directory whose contents should be lowercased.</param>
-    private static void LowercaseFolder(string directory)
+    public static void LowercaseFolder(string directory)
     {
         DirectoryInfo dir = new DirectoryInfo(directory);
 
@@ -29,7 +29,7 @@ public static partial class PortHelper
         }
     }
     
-    private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+    public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
     {
         // Get the subdirectories for the specified directory.
         DirectoryInfo dir = new DirectoryInfo(sourceDirName);
@@ -73,7 +73,7 @@ public static partial class PortHelper
     /// SaveAndroidIcon(iconPath, 128, "128.png");
     /// </code>
     /// </example>
-    private static void SaveAndroidIcon(string iconPath, int dimensions, string filePath)
+    public static void SaveAndroidIcon(string iconPath, int dimensions, string filePath)
     {
         Image picture = Image.Load(iconPath);
         picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
@@ -85,7 +85,7 @@ public static partial class PortHelper
     /// </summary>
     /// <param name="filename">The full filepath to a file whose SHA256 hash should be calculated.</param>
     /// <returns>The SHA256 hash of <see cref="filename"/>.</returns>
-    private static string CalculateSHA256(string filename)
+    public static string CalculateSHA256(string filename)
     {
         // Check if file exists first
         if (!File.Exists(filename))
