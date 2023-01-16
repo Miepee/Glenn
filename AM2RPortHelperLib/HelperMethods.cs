@@ -17,19 +17,23 @@ public static class HelperMethods
         foreach(var file in dir.GetFiles())
         {
             if (file.Name == file.Name.ToLower()) continue;
-            file.MoveTo(file.DirectoryName + "/" + file.Name.ToLower());
+            // Windows is dumb, thus we need to move in two trips
+            file.MoveTo(file.DirectoryName + "/" + file.Name.ToLower() + "_");
+            file.MoveTo(file.FullName.Substring(0, file.FullName.Length-1));
         }
 
         foreach(var subDir in dir.GetDirectories())
         {
             if (subDir.Name == subDir.Name.ToLower()) continue;
             // ReSharper disable once PossibleNullReferenceException - since this is a subdirectory, it always has a parent
-            subDir.MoveTo(subDir.Parent.FullName + "/" + subDir.Name.ToLower());
+            // Windows is dumb, thus we need to move in two trips
+            subDir.MoveTo(subDir.Parent.FullName + "/" + subDir.Name.ToLower() + "_");
+            subDir.MoveTo(subDir.FullName.Substring(0, subDir.FullName.Length-1));
             LowercaseFolder(subDir.FullName);
         }
     }
     
-    public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+    public static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs = true)
     {
         // Get the subdirectories for the specified directory.
         DirectoryInfo dir = new DirectoryInfo(sourceDirName);

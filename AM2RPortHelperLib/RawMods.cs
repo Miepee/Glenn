@@ -1,15 +1,49 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
 
 public abstract class RawMods : IMods
 {
-    // TODO: Make these not windows -> OS, but Raw -> OS
+    // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
+    // But until some person actually shows up that needs this feature, I'm too lazy to implement it
+    
+    
+    private static ModOS GetModOSOfRawZip(string inputRawZipPath)
+    {
+        ZipArchive archive = ZipFile.OpenRead(inputRawZipPath);
+        if (archive.Entries.Any(f => f.FullName == "AM2R.exe") && archive.Entries.Any(f => f.FullName == "data.win"))
+            return ModOS.Linux;
+        
+        if (archive.Entries.Any(f => f.FullName == "runner") && archive.Entries.Any(f => f.FullName == "assets/game.unx"))
+            return ModOS.Linux;
+        
+        // I probably *should* use fullpaths for these, but the .app file could technically be different and don't want to thinka bout how to circumvent it
+        if (archive.Entries.Any(f => f.FullName.Contains("Contents/MacOS/Mac_Runner")) && archive.Entries.Any(f => f.FullName.Contains("Contents/Resources/game.ios")))
+            return ModOS.Mac;
+        
+        throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
+    }
+    
+    // TODO: Port to Windows
+    public static void PortToWindows(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputHandlerDelegate = null)
+    {
+        throw new NotImplementedException();
+    }
+    
     public static void PortToLinux(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
-        
+        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        SendOutput("Zip Recognized as " + currentOS);
+
+        if (currentOS == ModOS.Linux)
+        {
+            SendOutput("Zip is already a raw Linux zip.");
+            return;
+        }
+
         outputHandler = outputDelegate;
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string assetsDir = extractDirectory + "/assets";
@@ -17,26 +51,31 @@ public abstract class RawMods : IMods
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
-        SendOutput("Extracting Linux...");
-        ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
-
-        // Move everything into assets folder
-        SendOutput("Moving into Linux assets folder...");
+        SendOutput("Extracting for Raw Linux...");
         Directory.CreateDirectory(assetsDir);
-        foreach (var file in new DirectoryInfo(extractDirectory).GetFiles())
-            file.MoveTo(assetsDir + "/" + file.Name);
-
-        foreach (var dir in new DirectoryInfo(extractDirectory).GetDirectories())
-        {
-            if (dir.Name == "assets") continue;
-            dir.MoveTo(assetsDir + "/" + dir.Name);
-        }
-
+        ZipFile.ExtractToDirectory(inputRawZipPath, assetsDir);
+        
         // Delete unnecessary files, rename data.win, move in the new runner
         SendOutput("Delete unnecessary files for Linux and lowercase them...");
-        File.Delete(assetsDir + "/AM2R.exe");
-        File.Delete(assetsDir + "/D3DX9_43.dll");
-        File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
+        switch (currentOS)
+        {
+            case ModOS.Windows:
+                File.Delete(assetsDir + "/AM2R.exe");
+                File.Delete(assetsDir + "/D3DX9_43.dll");
+                File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
+                break;
+            case ModOS.Mac:
+                var appDir = new DirectoryInfo(assetsDir).GetDirectories().First(n => n.Name.EndsWith(".app"));
+                HelperMethods.DirectoryCopy(assetsDir + "/" + appDir.Name + "/Contents/Resources", assetsDir);
+                File.Delete(assetsDir + "/gamecontrollerdb.txt");
+                File.Delete(assetsDir + "/yoyorunner.config");
+                Directory.Delete(assetsDir + "/English.lproj", true);
+                Directory.Delete(assetsDir + "/" + appDir.Name, true);
+                File.Move(assetsDir + "/game.ios", assetsDir + "/game.unx");
+                break;
+            default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
+        }
+        
         File.Copy(utilDir + "/runner", extractDirectory + "/runner");
         if (!File.Exists(assetsDir + "/icon.png"))
             File.Copy(utilDir + "/icon.png", assetsDir + "/icon.png");
@@ -47,16 +86,19 @@ public abstract class RawMods : IMods
         HelperMethods.LowercaseFolder(assetsDir);
 
         //zip the result
-        SendOutput("Creating Linux zip...");
+        SendOutput("Creating raw Linux zip...");
         ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
         // Clean up
         Directory.Delete(assetsDir, true);
     }
-
+    
     // TODO: try to figure out if its possible to extract the name from the data.win file and then just offer a "use custom save directory" option that decides whether to use it or not.
     public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, string modName = null, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
+        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        SendOutput("Zip Recognized as " + currentOS);
+        
         outputHandler = outputDelegate;
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string unzipDir = extractDirectory + "/zip";
@@ -72,8 +114,6 @@ public abstract class RawMods : IMods
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
         Directory.CreateDirectory(extractDirectory);
-        SendOutput("Extracting...");
-        ZipFile.ExtractToDirectory(inputRawZipPath, unzipDir);
 
         // Run APKTOOL and decompress the file
         SendOutput("Decompiling apk...");
@@ -87,20 +127,38 @@ public abstract class RawMods : IMods
         p.Start();
         p.WaitForExit();
         
-        // Move everything into assets folder
-        SendOutput("Move into Android assets folder...");
-        foreach (var file in new DirectoryInfo(unzipDir).GetFiles())
-            file.MoveTo(apkAssetsDir + "/" + file.Name);
-
-        foreach (var dir in new DirectoryInfo(unzipDir).GetDirectories())
-            dir.MoveTo(apkAssetsDir + "/" + dir.Name);
-
+        SendOutput("Extracting for Raw Android...");
+        ZipFile.ExtractToDirectory(inputRawZipPath, apkAssetsDir);
+        
         // Delete unnecessary files, rename data.win, move in the new runner
         SendOutput("Delete unnecessary files for Android and lowercase them...");
-        File.Delete(apkAssetsDir + "/AM2R.exe");
-        File.Delete(apkAssetsDir + "/D3DX9_43.dll");
-        File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
-        File.Copy(utilDir + "/splashAndroid.png", apkAssetsDir + "/splash.png", true);
+        switch (currentOS)
+        {
+            case ModOS.Windows:
+                File.Delete(apkAssetsDir + "/AM2R.exe");
+                File.Delete(apkAssetsDir + "/D3DX9_43.dll");
+                File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
+                break;
+            case ModOS.Linux:
+                File.Delete(apkAssetsDir + "/runner");
+                HelperMethods.DirectoryCopy(apkAssetsDir + "/assets", apkAssetsDir);
+                Directory.Delete(apkAssetsDir + "/assets", true);
+                File.Move(apkAssetsDir + "/game.unx", apkAssetsDir + "/game.droid");
+                break;
+            case ModOS.Mac:
+                var appDir = new DirectoryInfo(apkAssetsDir).GetDirectories().First(n => n.Name.EndsWith(".app"));
+                HelperMethods.DirectoryCopy(apkAssetsDir + "/" + appDir.Name + "/Contents/Resources", apkAssetsDir);
+                File.Delete(apkAssetsDir + "/gamecontrollerdb.txt");
+                File.Delete(apkAssetsDir + "/yoyorunner.config");
+                Directory.Delete(apkAssetsDir + "/English.lproj", true);
+                Directory.Delete(apkAssetsDir + "/" + appDir.Name, true);
+                File.Move(apkAssetsDir + "/game.ios", apkAssetsDir + "/game.droid");
+                break;
+            default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
+        }
+        
+        if (!File.Exists(apkAssetsDir + "/splash.png"))
+            File.Copy(utilDir + "/splashAndroid.png", apkAssetsDir + "/splash.png", true);
 
         //recursively lowercase everything in the assets folder
         HelperMethods.LowercaseFolder(apkAssetsDir);
@@ -121,7 +179,7 @@ public abstract class RawMods : IMods
         HelperMethods.SaveAndroidIcon(origPath, 144, resPath + "/drawable-xxhdpi-v4/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
         
-        // Hermite probably the best
+        // TODO: Hermite probably best as image upscaler, but we'll see
         
         // On certain occasions, we need to modify the manifest file.
         if (modName != null || usesInternet)
@@ -205,6 +263,15 @@ public abstract class RawMods : IMods
     //TODO: try to figure out if its possible to extract the name from the data.win file? They do have a displayname option last time I checked...
     public static void PortToMac(string inputRawZipPath, string outputRawZipPath, string modName, OutputHandlerDelegate outputDelegate = null)
     {
+        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        SendOutput("Zip Recognized as " + currentOS);
+
+        if (currentOS == ModOS.Mac)
+        {
+            SendOutput("Zip is already a raw Mac zip.");
+            return;
+        }
+        
         outputHandler = outputDelegate;
         string baseTempDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string extractDirectory = baseTempDirectory + "/extract";
@@ -228,13 +295,27 @@ public abstract class RawMods : IMods
 
         // Delete unnecessary files, rename data.win, move in the new runner
         SendOutput("Delete unnecessary files for Mac and lowercase them...");
-        File.Delete(extractDirectory + "/AM2R.exe");
-        File.Delete(extractDirectory + "/D3DX9_43.dll");
-        File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
+        switch (currentOS)
+        {
+            case ModOS.Windows:
+                File.Delete(assetsDir + "/AM2R.exe");
+                File.Delete(assetsDir + "/D3DX9_43.dll");
+                File.Move(assetsDir + "/data.win", assetsDir + "/game.ios");
+                break;
+            case ModOS.Linux:
+                File.Delete(assetsDir + "/runner");
+                HelperMethods.DirectoryCopy(assetsDir + "/assets", assetsDir);
+                Directory.Delete(assetsDir + "/assets", true);
+                File.Move(assetsDir + "/game.unx", assetsDir + "/game.ios");
+                break;
+            default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
+        }
+
         if (!File.Exists(assetsDir + "/icon.png"))
             File.Copy(utilDir + "/icon.png", extractDirectory + "/icon.png");
         if (!File.Exists(assetsDir + "/splash.png"))
             File.Copy(utilDir + "/splash.png", extractDirectory + "/splash.png");
+        
         // Delete fonts folder if it exists, because I need to convert bytecode version from game and newer version doesn't support font loading
         if (Directory.Exists(extractDirectory + "/lang/fonts"))
             Directory.Delete(extractDirectory + "/lang/fonts", true);
@@ -243,7 +324,7 @@ public abstract class RawMods : IMods
         HelperMethods.LowercaseFolder(extractDirectory);
 
         // Convert data.win to BC16 and get rid of not needed functions anymore
-        SendOutput("Editing data.win to change data.win BC version and functions...");
+        SendOutput("Editing data.win to change ByteCode version and functions...");
         string bin;
         string args;
 
@@ -274,7 +355,7 @@ public abstract class RawMods : IMods
 
         // Copy assets to the place where they belong to
         SendOutput("Copy files over...");
-        HelperMethods.DirectoryCopy(extractDirectory, assetsDir, true);
+        HelperMethods.DirectoryCopy(extractDirectory, assetsDir);
 
         // Edit config and plist to change display name
         SendOutput("Editing Runner references to AM2R...");

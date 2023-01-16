@@ -7,7 +7,7 @@ public class Core
     /// </summary>
     public const string Version = "1.4";
 
-    public enum LauncherModTargets
+    public enum ModOS
     {
         Windows,
         Linux,
