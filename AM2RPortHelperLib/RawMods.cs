@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
@@ -30,7 +31,7 @@ public abstract class RawMods : IMods
     // TODO: Port to Windows
     public static void PortToWindows(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputHandlerDelegate = null)
     {
-        throw new NotImplementedException();
+        
     }
     
     public static void PortToLinux(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
@@ -40,7 +41,8 @@ public abstract class RawMods : IMods
 
         if (currentOS == ModOS.Linux)
         {
-            SendOutput("Zip is already a raw Linux zip.");
+            SendOutput("Zip is already a raw Linux zip. Copying to output directory...");
+            File.Copy(inputRawZipPath, outputRawZipPath, true);
             return;
         }
 
@@ -170,6 +172,7 @@ public abstract class RawMods : IMods
 
         // Edit the icons in the apk
         string resPath = apkDir + "/res";
+        // TODO: icon should only be read from if its there, otherwise default frog icon should be in the assembly
         string origPath = utilDir + "/icon.png";
         HelperMethods.SaveAndroidIcon(origPath, 96, resPath + "/drawable/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 72, resPath + "/drawable-hdpi-v4/icon.png");
@@ -187,10 +190,13 @@ public abstract class RawMods : IMods
             string manifestFile = File.ReadAllText(apkDir + "/AndroidManifest.xml");
 
             // If a custom name was given, replace it everywhere.
-            //TODO: handle errors:
-            // A-Z, a-z, digits, underscore and needs to start with letters
             if (modName != null)
             {
+                // rules for name: A-Z, a-z, digits, underscore and needs to start with letters
+                Regex nameReg = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*$");
+                if (!nameReg.Match(modName).Success)
+                    throw new InvalidDataException("The display name " + modName + " is invalid! The name has to start with letters (a-z), and can only contain letters, digits and underscore!");
+                
                 // first in the manifest
                 manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
                 
@@ -268,7 +274,8 @@ public abstract class RawMods : IMods
 
         if (currentOS == ModOS.Mac)
         {
-            SendOutput("Zip is already a raw Mac zip.");
+            SendOutput("Zip is already a raw Mac zip. Copying to output dir...");
+            File.Copy(inputRawZipPath, outputRawZipPath, true);
             return;
         }
         
