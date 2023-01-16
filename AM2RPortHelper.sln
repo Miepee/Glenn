@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Mac", "AM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Wpf", "AM2RPortHelperGUI\AM2RPortHelperGUI.Wpf\AM2RPortHelperGUI.Wpf.csproj", "{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModLib", "UndertaleModTool\UndertaleModLib\UndertaleModLib.csproj", "{3907CAFD-896C-47F1-B284-C75BC5EA4B3B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
