@@ -1,10 +1,6 @@
 ﻿using System;
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Help;
-using System.CommandLine.Parsing;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using AM2RPortHelperLib;
 
@@ -19,7 +15,7 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        //PortHelper.PortLauncherMod("/home/narr/Downloads/UnofficialMultitroidAPKTest1_6a.zip", "Linux", true, "./foo.zip");
+        //LauncherMods.PortLauncherMod("/home/narr/Downloads/UnofficialMultitroidAPKTest1_6b.zip", Core.ModOS.Linux, true, "./foo.zip");
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
@@ -38,26 +34,13 @@ internal static class Program
             androidOption,
             macOption,
             nameOption,
-            internetOption
+            internetOption,
         };
         rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption,
                                macOption, nameOption, internetOption, verboseOption);
 
-
-        var parser = new CommandLineBuilder(rootCommand)
-            .UseDefaults()
-            .UseHelp(ctx => { ctx.HelpBuilder.CustomizeLayout(_ => HelpBuilder.Default.GetLayout().Prepend(_ => Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version)));})
-            .Build();
         
-        return parser.Invoke(args);
-        //return rootCommand.Invoke(args);
-
-        /*
-         TODO: show this somewhere? maybe?
-        Console.WriteLine("\n**Make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**\n");
-        Console.WriteLine("THIS ONLY WORKS FOR MODS BASED ON THE COMMUNITY UPDATES! MODS BASED ON 1.1 WILL NOT WORK!");
-        */
-
+        return rootCommand.Invoke(args);
     }
 #pragma warning disable CS1998
     private static async Task<int> RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath,
@@ -65,7 +48,7 @@ internal static class Program
 #pragma warning restore CS1998
     {
         if (interactive || beVerbose)
-            Console.WriteLine("AM2RPortHelperCLI v" + PortHelper.Version);
+            Console.WriteLine("AM2RPortHelperCLI v" + Core.Version);
         
         if (interactive)
         {
@@ -81,11 +64,11 @@ internal static class Program
 
         if (linuxPath is not null)
         {
-            PortHelper.PortWindowsToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (androidPath is not null)
         {
-            PortHelper.PortWindowsToAndroid(inputModPath.FullName, androidPath.FullName,
+            RawMods.PortToAndroid(inputModPath.FullName, androidPath.FullName,
                                             String.IsNullOrWhiteSpace(modName) ? null : modName, usesInternet, beVerbose ? OutputHandlerDelegate : null);
         }
         if (macPath is not null)
@@ -95,7 +78,7 @@ internal static class Program
                 Console.Error.WriteLine("Mac option was chosen but mod name was not given!");
                 return 1;
             }
-            PortHelper.PortWindowsToMac(inputModPath.FullName, macPath.FullName, modName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, modName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (beVerbose)
             Console.WriteLine("Done.");
@@ -103,6 +86,10 @@ internal static class Program
     }
     private static void RunInteractive()
     {
+        Console.WriteLine("**Before you proceed, make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**");
+        Console.WriteLine("THIS TOOL ONLY WORKS FOR MODS BASED ON THE COMMUNITY UPDATES! MODS BASED ON 1.1 WILL NOT WORK!");
+
+        
         // Path to zip
         bool invalidZip = true;
         string modZipPath;
@@ -160,7 +147,7 @@ internal static class Program
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            PortHelper.PortWindowsToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
+            RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
         }
 
         if (androidSelected)
@@ -184,7 +171,7 @@ internal static class Program
             }
             while (internetSelected == null);
 
-            PortHelper.PortWindowsToAndroid(modZipPath, androidPath, null, internetSelected.Value, OutputHandlerDelegate);
+            RawMods.PortToAndroid(modZipPath, androidPath, null, internetSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
@@ -193,7 +180,7 @@ internal static class Program
             
             Console.WriteLine("Mac requires a name! Please enter one (no special characters!):");
             string modName = Console.ReadLine();
-            PortHelper.PortWindowsToMac(modZipPath, macPath, modName, OutputHandlerDelegate);
+            RawMods.PortToMac(modZipPath, macPath, modName, OutputHandlerDelegate);
         }
         
         Console.WriteLine("Successfully finished!");
