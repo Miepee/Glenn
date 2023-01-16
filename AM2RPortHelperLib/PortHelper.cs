@@ -1,7 +1,10 @@
 ﻿using System.Diagnostics;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Transforms;
 
 namespace AM2RPortHelperLib;
 
@@ -49,10 +52,11 @@ public static partial class PortHelper
     /// <param name="targetOS">The target operating system to port the </param>
     /// <param name="includeAndroid">Whether Android should be inlcuded in the port.</param>
     /// <param name="outputLauncherZipPath">The path where the ported AM2RLauncher mod zip should be saved.</param>
+    /// <param name="am2r11ZipPath">The path to an AM2R 1.1 zip path. This is *required* if the input launcher zip is for Mac and will be ignored if the input zip is for anything else.</param>
     /// <param name="outputDelegate">The function that should handle in-progress output messages.</param>
     /// <exception cref="NotSupportedException">WIP</exception>
     /// TODO: other exceptions
-    public static void PortLauncherMod(string inputLauncherZipPath, LauncherModTargets targetOS, bool includeAndroid, string outputLauncherZipPath, OutputHandlerDelegate outputDelegate = null)
+    public static void PortLauncherMod(string inputLauncherZipPath, LauncherModTargets targetOS, bool includeAndroid, string outputLauncherZipPath, string am2r11ZipPath = null, OutputHandlerDelegate outputDelegate = null)
     {
         outputHandler = outputDelegate;  
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputLauncherZipPath);
@@ -64,15 +68,10 @@ public static partial class PortHelper
         SendOutput("Extracting Launcher mod...");
         ZipFile.ExtractToDirectory(inputLauncherZipPath, extractDirectory);
 
-        // Run sha256 hash on runner to see if it's supported!        
-        string runnerHash = CalculateSHA256(extractDirectory + "/AM2R.xdelta");
-        string[] allowedHashes = new[] { "b78c4fd2dc481f97b60440a5c89786da284b4aaeeba9fb2e3b48ac369cfe50d5", "243509f4270f448411c8405b71d7bc4f5d4fe5f3ecc1638d9c1218bf76b69f1f", "852b9a9466f99a53260b8147c6d286b81c145b2c10b00bb5c392b40b035811b5"};
-        if (!allowedHashes.Contains(runnerHash))
-            throw new NotSupportedException("Invalid GM:S version! Porting Launcher mods is only supported for mods build with GM:S 1.4.1763!");
-        
         var profile = Serializer.Deserialize<ProfileXML>(File.ReadAllText(extractDirectory + "/profile.xml"));
         if (profile.UsesYYC)
             throw new NotSupportedException("Launcher Mod is YYC, cannot port!");
+        
         string currentOS = profile.OperatingSystem;
         bool isAndroidIncluded = profile.SupportsAndroid;
 
@@ -82,15 +81,24 @@ public static partial class PortHelper
             return;
         }
 
+        // Run sha256 hash on runner to see if it's supported!        
+        string runnerHash = CalculateSHA256(extractDirectory + "/AM2R.xdelta");
+        string[] allowedHashes = new[] { "b78c4fd2dc481f97b60440a5c89786da284b4aaeeba9fb2e3b48ac369cfe50d5", "243509f4270f448411c8405b71d7bc4f5d4fe5f3ecc1638d9c1218bf76b69f1f", "852b9a9466f99a53260b8147c6d286b81c145b2c10b00bb5c392b40b035811b5"};
+        // Don't check has on Windows, because the runner there has icons embedded in it, screwing off the hashes
+        // TODO: find a way around that
+        if (!(profile.OperatingSystem == "Windows" || allowedHashes.Contains(runnerHash)))
+            throw new NotSupportedException("Invalid GM:S version! Porting Launcher mods is only supported for mods build with GM:S 1.4.1763!");
+        
         // TODO: Not sure if this is ever gonna be possible, since it requires one to shift back the patch.
         // We'd need a 1.1 file to apply the patch to, run that with umtlib to shift it back, and then apply a new patch.
         if (profile.OperatingSystem == "Mac")
             throw new NotSupportedException("Porting Mac mods is currently not supported!");
-
+        
         switch (targetOS)
         {
             case LauncherModTargets.Windows:
             {
+                // We have a non-windows launcher mod, where data file patch is guaranteed to be game.xdelta
                 File.Move(extractDirectory + "/game.xdelta", extractDirectory + "/data.xdelta");
                 
                 // get proper runner
@@ -111,7 +119,7 @@ public static partial class PortHelper
                 {
                     "Linux" => profile.SaveLocation.Replace("~/.config", "%localappdata%"),
                     "Mac" => profile.SaveLocation.Replace("~/Library/Application Support", "%localappdata%"),
-                    _ => throw new NotSupportedException("Unsupported OS " + currentOS)
+                    _ => throw new NotSupportedException("Unsupported OS: " + currentOS)
                 };
                 File.WriteAllText(extractDirectory + "/profile.xml",Serializer.Serialize<ProfileXML>(profile));
                 break;
@@ -288,16 +296,17 @@ public static partial class PortHelper
 
         // Edit the icons in the apk
         string resPath = apkDir + "/res";
-        Image orig = Image.Load(utilDir + "/icon.png");
-        SaveAndroidIcon(orig, 96, resPath + "/drawable/icon.png");
-        SaveAndroidIcon(orig, 72, resPath + "/drawable-hdpi-v4/icon.png");
-        SaveAndroidIcon(orig, 36, resPath + "/drawable-ldpi-v4/icon.png");
-        SaveAndroidIcon(orig, 48, resPath + "/drawable-mdpi-v4/icon.png");
-        SaveAndroidIcon(orig, 96, resPath + "/drawable-xhdpi-v4/icon.png");
-        SaveAndroidIcon(orig, 144, resPath + "/drawable-xxhdpi-v4/icon.png");
-        SaveAndroidIcon(orig, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
-
-
+        string origPath = utilDir + "/icon.png";
+        SaveAndroidIcon(origPath, 96, resPath + "/drawable/icon.png");
+        SaveAndroidIcon(origPath, 72, resPath + "/drawable-hdpi-v4/icon.png");
+        SaveAndroidIcon(origPath, 36, resPath + "/drawable-ldpi-v4/icon.png");
+        SaveAndroidIcon(origPath, 48, resPath + "/drawable-mdpi-v4/icon.png");
+        SaveAndroidIcon(origPath, 96, resPath + "/drawable-xhdpi-v4/icon.png");
+        SaveAndroidIcon(origPath, 144, resPath + "/drawable-xxhdpi-v4/icon.png");
+        SaveAndroidIcon(origPath, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
+        
+        // Hermite probably the best
+        
         // On certain occasions, we need to modify the manifest file.
         if (modName != null || usesInternet)
         {

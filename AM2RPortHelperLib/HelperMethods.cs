@@ -62,24 +62,24 @@ public static partial class PortHelper
     }
     
     /// <summary>
-    /// Resizes an <see cref="Image"/>, resizes it via Nearest Neighbor to a specified dimension, and then saves it to a specified path.
+    /// Loads an <see cref="Image"/> via filepath, resizes it via Nearest Neighbor to a specified dimension, and then saves it to a specified path.
     /// </summary>
-    /// <param name="icon">The image to resize and save.</param>
-    /// <param name="dimensions">The dimensions <paramref name="icon"/> should be resized to.</param>
+    /// <param name="iconPath">The path to the image to resize and save.</param>
+    /// <param name="dimensions">The dimensions <paramref name="iconPath"/> should be resized to.</param>
     /// <param name="filePath">The filepath where the resized image should be saved to.</param>
     /// <example>
     /// <code>
-    /// Image icon = Image.Load("icon.png");
-    /// SaveAndroidIcon(icon, 128, "128.png");
+    /// Image iconPath = Image.Load("iconPath.png");
+    /// SaveAndroidIcon(iconPath, 128, "128.png");
     /// </code>
     /// </example>
-    private static void SaveAndroidIcon(Image icon, int dimensions, string filePath)
+    private static void SaveAndroidIcon(string iconPath, int dimensions, string filePath)
     {
-        Image picture = icon;
+        Image picture = Image.Load(iconPath);
         picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
         picture.SaveAsPng(filePath);
     }
-    
+
     /// <summary>
     /// Calculates the SHA256 hash of a specified file.
     /// </summary>
