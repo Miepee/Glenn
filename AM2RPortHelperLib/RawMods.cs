@@ -201,27 +201,29 @@ public abstract class RawMods : IMods
                 manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
                 
                 // then in the rest
-                // TODO: create some sort of function for it to avoid copy paste
+                string AndroidIDReplace(string content, string name)
+                {
+                    return content.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}")
+                        .Replace("com/companyname/AM2RWrapper", $"com/companyname/{modName}")
+                        .Replace("com$companyname$AM2RWrapper", $"com$companyname${modName}");
+                }
                 foreach (var file in Directory.GetFiles($"{apkDir}/smali/com/yoyogames/runner"))
                 {
                     var content = File.ReadAllText(file);
-                    content = content.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}")
-                        .Replace("com/companyname/AM2RWrapper", $"com/companyname/{modName}");
+                    content = AndroidIDReplace(content, modName);
                     File.WriteAllText(file, content);
                 }
                 var am2rWrapperDir = new DirectoryInfo($"{apkDir}/smali/com/companyname/AM2RWrapper");
                 foreach (var file in am2rWrapperDir.GetFiles())
                 {
                     var content = File.ReadAllText(file.FullName);
-                    content = content.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}")
-                        .Replace("com/companyname/AM2RWrapper", $"com/companyname/{modName}")
-                        .Replace("com$companyname$AM2RWrapper", $"com$companyname${modName}");
+                    content = AndroidIDReplace(content, modName);
                     File.WriteAllText(file.FullName, content);
                 }
                 am2rWrapperDir.MoveTo($"{apkDir}/smali/com/companyname/{modName}");
 
                 var layoutContent = File.ReadAllText($"{apkDir}/res/layout/main.xml");
-                layoutContent = layoutContent.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
+                layoutContent = AndroidIDReplace(layoutContent, modName);
                 File.WriteAllText($"{apkDir}/res/layout/main.xml", layoutContent);
             }
 
@@ -285,10 +287,7 @@ public abstract class RawMods : IMods
         string appDirectory = baseTempDirectory + "/AM2R.app";
         string contentsDir = baseTempDirectory + "/Contents";
         string assetsDir = contentsDir + "/Resources";
-
-        // Get name from user
-        //TODO: handle error on special characters
-
+        
         // Check if temp folder exists, delete if yes, copy bare runner to there
         if (Directory.Exists(baseTempDirectory))
             Directory.Delete(baseTempDirectory, true);
@@ -365,6 +364,7 @@ public abstract class RawMods : IMods
         HelperMethods.DirectoryCopy(extractDirectory, assetsDir);
 
         // Edit config and plist to change display name
+        //TODO: handle error on special characters
         SendOutput("Editing Runner references to AM2R...");
         string textFile = File.ReadAllText(assetsDir + "/yoyorunner.config");
         textFile = textFile.Replace("YoYo Runner", modName);
