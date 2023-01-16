@@ -11,7 +11,7 @@ public abstract class RawMods : IMods
     // But until some person actually shows up that needs this feature, I'm too lazy to implement it
     
     
-    private static ModOS GetModOSOfRawZip(string inputRawZipPath)
+    public static ModOS GetModOSOfRawZip(string inputRawZipPath)
     {
         ZipArchive archive = ZipFile.OpenRead(inputRawZipPath);
         if (archive.Entries.Any(f => f.FullName == "AM2R.exe") && archive.Entries.Any(f => f.FullName == "data.win"))
