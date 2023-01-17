@@ -155,7 +155,7 @@ internal static class Program
             if (File.Exists(androidPath))
                 File.Delete(androidPath);
             
-            // TODO: ask for modname
+            // TODO: ask for modname - temp until the other todo is fixed where it gets taht automatically
             bool? internetSelected = null;
             do
             {
@@ -186,10 +186,10 @@ internal static class Program
         Console.WriteLine("Successfully finished!");
     }
     
-    // TODO: we should probably check for magic header instead of just file extension
+    // We want people to also provide zips that don't end in .zip. If it turns out to not be a zip, it'll still throw later.
     private static bool IsValidInputZip(string path)
     {
-        return path != null && (File.Exists(path) || Path.GetExtension(path).ToLower() == ".zip");
+        return path != null && (File.Exists(path));
     }
 
     private static bool IsValidInputZip(FileInfo path)
