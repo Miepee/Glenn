@@ -18,7 +18,7 @@ public abstract class RawMods : IMods
     {
         ZipArchive archive = ZipFile.OpenRead(inputRawZipPath);
         if (archive.Entries.Any(f => f.FullName == "AM2R.exe") && archive.Entries.Any(f => f.FullName == "data.win"))
-            return ModOS.Linux;
+            return ModOS.Windows;
         
         if (archive.Entries.Any(f => f.FullName == "runner") && archive.Entries.Any(f => f.FullName == "assets/game.unx"))
             return ModOS.Linux;
@@ -182,8 +182,6 @@ public abstract class RawMods : IMods
         HelperMethods.SaveAndroidIcon(origPath, 96, resPath + "/drawable-xhdpi-v4/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 144, resPath + "/drawable-xxhdpi-v4/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 192, resPath + "/drawable-xxxhdpi-v4/icon.png");
-        
-        // TODO: Hermite probably best as image upscaler, but we'll see
         
         // On certain occasions, we need to modify the manifest file.
         if (useCustomSaveDirectory || usesInternet)

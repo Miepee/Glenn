@@ -80,6 +80,7 @@ public static class HelperMethods
     public static void SaveAndroidIcon(string iconPath, int dimensions, string filePath)
     {
         Image picture = Image.Load(iconPath);
+        // Most am2r cover is pixelart, hence why NN is used. Hermite would probably be a decent alternative too though.
         picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
         picture.SaveAsPng(filePath);
     }
