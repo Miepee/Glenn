@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using UndertaleModLib;
 using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
@@ -11,6 +12,7 @@ public abstract class RawMods : IMods
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
     // But until some person actually shows up that needs this feature, I'm too lazy to implement it
     
+    // TODO: documentation
     
     public static ModOS GetModOSOfRawZip(string inputRawZipPath)
     {
@@ -95,8 +97,7 @@ public abstract class RawMods : IMods
         Directory.Delete(assetsDir, true);
     }
     
-    // TODO: try to figure out if its possible to extract the name from the data.win file and then just offer a "use custom save directory" option that decides whether to use it or not.
-    public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, string modName = null, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
+    public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         SendOutput("Zip Recognized as " + currentOS);
@@ -185,17 +186,26 @@ public abstract class RawMods : IMods
         // TODO: Hermite probably best as image upscaler, but we'll see
         
         // On certain occasions, we need to modify the manifest file.
-        if (modName != null || usesInternet)
+        if (useCustomSaveDirectory || usesInternet)
         {
             string manifestFile = File.ReadAllText(apkDir + "/AndroidManifest.xml");
 
             // If a custom name was given, replace it everywhere.
-            if (modName != null)
+            if (useCustomSaveDirectory)
             {
+                string modName;
+                FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
+                using (FileStream fs = datafile.OpenRead())
+                {
+                    UndertaleData gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
+                    modName = gmData.GeneralInfo.DisplayName.Content;
+                }
+                modName = modName.Replace(" ", "").Replace(":", "");
+                
                 // rules for name: A-Z, a-z, digits, underscore and needs to start with letters
                 Regex nameReg = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*$");
                 if (!nameReg.Match(modName).Success)
-                    throw new InvalidDataException("The display name " + modName + " is invalid! The name has to start with letters (a-z), and can only contain letters, digits and underscore!");
+                    throw new InvalidDataException("The display name " + modName + " is invalid! The name has to start with letters (a-z), and can only contain letters, digits, space, colon and underscore!");
                 
                 // first in the manifest
                 manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
@@ -268,8 +278,7 @@ public abstract class RawMods : IMods
         Directory.Delete(extractDirectory, true);
     }
     
-    //TODO: try to figure out if its possible to extract the name from the data.win file? They do have a displayname option last time I checked...
-    public static void PortToMac(string inputRawZipPath, string outputRawZipPath, string modName, OutputHandlerDelegate outputDelegate = null)
+    public static void PortToMac(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         SendOutput("Zip Recognized as " + currentOS);
@@ -334,6 +343,7 @@ public abstract class RawMods : IMods
         string bin;
         string args;
 
+        // TODO: replace this via built-in lib
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             bin = "\"" + utilDir + "/UTMTCli/UndertaleModCli.exe\"";
@@ -364,7 +374,15 @@ public abstract class RawMods : IMods
         HelperMethods.DirectoryCopy(extractDirectory, assetsDir);
 
         // Edit config and plist to change display name
-        //TODO: handle error on special characters
+        string modName;
+        FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
+        using (FileStream fs = datafile.OpenRead())
+        {
+            UndertaleData gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
+            modName = gmData.GeneralInfo.DisplayName.Content;
+        }
+        //TODO: handle error on special characters, but need to know which characters are invalid in the first place
+        //if (modName.Contains())
         SendOutput("Editing Runner references to AM2R...");
         string textFile = File.ReadAllText(assetsDir + "/yoyorunner.config");
         textFile = textFile.Replace("YoYo Runner", modName);
