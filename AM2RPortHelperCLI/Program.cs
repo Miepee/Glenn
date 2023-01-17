@@ -22,7 +22,7 @@ internal static class Program
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
-        var nameOption = new Option<string>(new[] { "-n", "--name" }, "The name used for the Mac or Android mod. Required for the Mac option, and optional for the Android version. Has no effect on anything else.");
+        var nameOption = new Option<bool>(new[] { "-s", "--customsave" }, "Whether the Android Port should use a custom save location. Has no effect on anything else.");
         var internetOption = new Option<bool>(new[] { "-w", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect to other OS.");
         var verboseOption = new Option<bool>(new[] { "-v", "--verbose" }, "Whether to show verbose output.");
 
@@ -44,7 +44,7 @@ internal static class Program
     }
 #pragma warning disable CS1998
     private static async Task<int> RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath,
-                                              string modName, bool usesInternet, bool beVerbose)
+                                              bool useCustomSave, bool usesInternet, bool beVerbose)
 #pragma warning restore CS1998
     {
         if (interactive || beVerbose)
@@ -69,16 +69,11 @@ internal static class Program
         if (androidPath is not null)
         {
             RawMods.PortToAndroid(inputModPath.FullName, androidPath.FullName,
-                                            String.IsNullOrWhiteSpace(modName) ? null : modName, usesInternet, beVerbose ? OutputHandlerDelegate : null);
+                                            useCustomSave, usesInternet, beVerbose ? OutputHandlerDelegate : null);
         }
         if (macPath is not null)
         {
-            if (modName is null)
-            {
-                Console.Error.WriteLine("Mac option was chosen but mod name was not given!");
-                return 1;
-            }
-            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, modName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (beVerbose)
             Console.WriteLine("Done.");
@@ -170,8 +165,23 @@ internal static class Program
                 Console.WriteLine();
             }
             while (internetSelected == null);
+            
+            bool? customSaveSelected = null;
+            do
+            {
+                Console.WriteLine("Do you want to use a custom save location for Android (y/n)?");
+                var input = Console.ReadKey().Key;
+                switch (input)
+                {
+                    case ConsoleKey.Y: customSaveSelected = true; break;
+                    case ConsoleKey.N: customSaveSelected = false; break;
+                    default: Console.WriteLine("Invalid input!"); break;
+                }
+                Console.WriteLine();
+            }
+            while (customSaveSelected == null);
 
-            RawMods.PortToAndroid(modZipPath, androidPath, null, internetSelected.Value, OutputHandlerDelegate);
+            RawMods.PortToAndroid(modZipPath, androidPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
@@ -180,7 +190,7 @@ internal static class Program
             
             Console.WriteLine("Mac requires a name! Please enter one (no special characters!):");
             string modName = Console.ReadLine();
-            RawMods.PortToMac(modZipPath, macPath, modName, OutputHandlerDelegate);
+            RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate);
         }
         
         Console.WriteLine("Successfully finished!");

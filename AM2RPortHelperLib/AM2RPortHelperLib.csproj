@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <!--TODO: UndertaleModLib needs to properly support .net standard! -->
+        <TargetFramework>.net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>10</LangVersion>
         <PackageVersion>1.8.0</PackageVersion>

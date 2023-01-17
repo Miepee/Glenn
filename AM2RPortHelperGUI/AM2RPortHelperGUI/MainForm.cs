@@ -42,7 +42,7 @@ public partial class MainForm : Form
         mainLayout.EndCentered();
         mainLayout.AddRow(new Label() { Height = 5 });
         mainLayout.BeginCentered();
-        mainLayout.AddRow(labelModName, new Label { Width = 15 }, textboxModName);
+        mainLayout.AddRow(checkboxUseCustomSave);
         mainLayout.EndCentered();
         mainLayout.AddSpace();
         mainLayout.BeginVertical();
@@ -79,7 +79,7 @@ public partial class MainForm : Form
         checkboxAndroidRequiresInternet.CheckedChanged += ShouldButtonPortBeEnabled;
         checkboxLinux.CheckedChanged += ShouldButtonPortBeEnabled;
         checkboxMac.CheckedChanged += ShouldButtonPortBeEnabled;
-        textboxModName.TextChanged += ShouldButtonPortBeEnabled;
+        checkboxUseCustomSave.TextChanged += ShouldButtonPortBeEnabled;
         filePicker.FilePathChanged += ShouldButtonPortBeEnabled;
         buttonPort.Click += ButtonPortOnClick;
     }
@@ -107,19 +107,18 @@ public partial class MainForm : Form
         {
             if (File.Exists(androidPath))
                 File.Delete(androidPath);
-            
-            string modName = null;
-            if (!String.IsNullOrWhiteSpace(textboxModName.Text)) modName = textboxModName.Text;
+
+            bool useCustomSave = checkboxUseCustomSave.Checked.Value;
             bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
-            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, modName, useInternet, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, useCustomSave, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
             if (File.Exists(macPath))
                 File.Delete(macPath);
             
-            string modName = textboxModName.Text;
-            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, modName, OutputHandlerDelegate));
+            string modName = checkboxUseCustomSave.Text;
+            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate));
         }
 
         labelProgress.Text = "Done!";
@@ -144,7 +143,7 @@ public partial class MainForm : Form
         if ((!String.IsNullOrWhiteSpace(filePicker.FilePath) 
             && ((checkboxAndroid.Checked.Value && !checkboxMac.Checked.Value)) 
             || (checkboxLinux.Checked.Value && !checkboxMac.Checked.Value) 
-            || (checkboxMac.Checked.Value && !String.IsNullOrWhiteSpace(textboxModName.Text))))
+            || (checkboxMac.Checked.Value && !String.IsNullOrWhiteSpace(checkboxUseCustomSave.Text))))
             
             buttonPort.Enabled = true;
         else
@@ -159,7 +158,7 @@ public partial class MainForm : Form
         checkboxMac.Enabled = !disabled;
         filePicker.Enabled = !disabled;
         buttonPort.Enabled = !disabled;
-        textboxModName.Enabled = !disabled;
+        checkboxUseCustomSave.Enabled = !disabled;
     }
 
     // Attributes
@@ -203,16 +202,15 @@ public partial class MainForm : Form
     private readonly CheckBox checkboxAndroidRequiresInternet = new CheckBox
     {
         Text = "Requires internet (See tooltip for info)",
-        ToolTip = "Only affects Android. If your mod interacts with the internet in any way (such as multiplayer), you should check this," +
+        ToolTip = "Only affects Android. If your mod interacts with the internet in any way (such as multiplayer), you should check this, " +
                   "as otherwise internet functions won't work."
     };
-    private readonly Label labelModName = new Label
+    private readonly CheckBox checkboxUseCustomSave = new CheckBox
     {
-        Text = "Enter mod name:\n(See tooltip for info)",
-        ToolTip = "The mod name is required for Mac, and optional for Android. It does not have any affect on other OS.\n" +
-                  "For Mac, it is used as the display name when the application is started. For Android, the name is used for the save location."
+        Text = "Use custom save location (See tooltip for info)",
+        ToolTip = "Only affects Android. Determines whether Android will use a custom save location based on its display name. If you don't " + 
+                  "want your mod overwriting normal AM2R on Android, you should check this."
     };
-    private readonly TextBox textboxModName = new TextBox();
 
     private readonly Button buttonPort = new Button
     {
