@@ -135,10 +135,8 @@ public abstract class RawMods : ModsBase
         }
         
         File.Copy(UtilDir + "/runner", extractDirectory + "/runner");
-        if (!File.Exists(assetsDir + "/icon.png"))
-            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), assetsDir + "/icon.png");
-        if (!File.Exists(assetsDir + "/splash.png"))
-            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), assetsDir + "/splash.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), assetsDir + "/icon.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), assetsDir + "/splash.png");
 
         //recursively lowercase everything in the assets folder
         HelperMethods.LowercaseFolder(assetsDir);
@@ -394,11 +392,8 @@ public abstract class RawMods : ModsBase
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
         }
 
-        // TODO: do we really want to keep their images?
-        if (!File.Exists(assetsDir + "/icon.png"))
-            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), extractDirectory + "/icon.png");
-        if (!File.Exists(assetsDir + "/splash.png"))
-            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), extractDirectory + "/splash.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), extractDirectory + "/icon.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), extractDirectory + "/splash.png");
         
         // Delete fonts folder if it exists, because I need to convert bytecode version from game and newer version doesn't support font loading
         if (Directory.Exists(extractDirectory + "/lang/fonts"))
