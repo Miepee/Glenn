@@ -9,7 +9,7 @@ using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
 
-public abstract class RawMods : IMods
+public abstract class RawModsBase : ModsBase
 {
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
     // But until some person actually shows up that needs this feature, I'm too lazy to implement it
@@ -34,10 +34,9 @@ public abstract class RawMods : IMods
 
     private static string GetProperPathToBuiltinIcons(string nameOfResource)
     {
-        string subCaseFunction(string resource)
+        string SubCaseFunction(string resource)
         {
-            // TODO: default path should be in XDG_CONFIG
-            string origPath = utilDir + "/" + resource;
+            string origPath = ConfigDir + "/" + resource;
             if (File.Exists(origPath))
                 return origPath;
 
@@ -49,19 +48,19 @@ public abstract class RawMods : IMods
                 _ => throw new InvalidDataException("SubCaseFunction was called with an improper resource!")
             };
             
-            Image.Load(byteArray).SaveAsPng(tmp + "/" + resource);
-            origPath = tmp + "/" + resource;
+            Image.Load(byteArray).SaveAsPng(TempDir + "/" + resource);
+            origPath = TempDir + "/" + resource;
             return origPath;
         }
         
         switch (nameOfResource)
         {
             case nameof(Resources.icon):
-                return subCaseFunction(nameof(Resources.icon) + ".png");
+                return SubCaseFunction(nameof(Resources.icon) + ".png");
             case nameof(Resources.splash):
-                return subCaseFunction(nameof(Resources.splash) + ".png");
+                return SubCaseFunction(nameof(Resources.splash) + ".png");
             case nameof(Resources.splashAndroid):
-                return subCaseFunction(nameof(Resources.splashAndroid) + ".png");
+                return SubCaseFunction(nameof(Resources.splashAndroid) + ".png");
             default: throw new InvalidDataException(nameOfResource + " is an unknown Icon!");
         }
     }
@@ -84,8 +83,8 @@ public abstract class RawMods : IMods
             return;
         }
 
-        outputHandler = outputDelegate;
-        string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        OutputHandler = outputDelegate;
+        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string assetsDir = extractDirectory + "/assets";
 
         // Check if temp folder exists, delete if yes, extract zip to there
@@ -116,7 +115,7 @@ public abstract class RawMods : IMods
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
         }
         
-        File.Copy(utilDir + "/runner", extractDirectory + "/runner");
+        File.Copy(UtilDir + "/runner", extractDirectory + "/runner");
         if (!File.Exists(assetsDir + "/icon.png"))
             File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), assetsDir + "/icon.png");
         if (!File.Exists(assetsDir + "/splash.png"))
@@ -130,7 +129,7 @@ public abstract class RawMods : IMods
         ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
         // Clean up
-        Directory.Delete(tmp, true);
+        Directory.Delete(TempDir, true);
     }
     
     public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
@@ -138,14 +137,14 @@ public abstract class RawMods : IMods
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         SendOutput("Zip Recognized as " + currentOS);
         
-        outputHandler = outputDelegate;
-        string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        OutputHandler = outputDelegate;
+        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string apkDir = extractDirectory + "/apk";
         string apkAssetsDir = apkDir + "/assets";
         string bin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "java";
         string args = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/C java -jar " : "-jar ";
-        string apktool = currentDir + "/utils/apktool.jar";
-        string signer = currentDir + "/utils/uber-apk-signer.jar";
+        string apktool = CurrentDir + "/utils/apktool.jar";
+        string signer = CurrentDir + "/utils/uber-apk-signer.jar";
         string finalApkBuild = extractDirectory + "/build-aligned-debugSigned.apk";
 
         // Check if temp folder exists, delete if yes, extract zip to there
@@ -158,7 +157,7 @@ public abstract class RawMods : IMods
         ProcessStartInfo pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
-            Arguments = args + "\"" + apktool + "\" d -f -o \"" + apkDir + "\" \"" + currentDir + "/utils/AM2RWrapper.apk" + "\"",
+            Arguments = args + "\"" + apktool + "\" d -f -o \"" + apkDir + "\" \"" + UtilDir + "/AM2RWrapper.apk" + "\"",
             CreateNoWindow = true
         };
         Process p = new Process { StartInfo = pStartInfo };
@@ -244,7 +243,7 @@ public abstract class RawMods : IMods
                 manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
                 
                 // then in the rest
-                string AndroidIDReplace(string content, string name)
+                string AndroidIdReplace(string content)
                 {
                     return content.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}")
                         .Replace("com/companyname/AM2RWrapper", $"com/companyname/{modName}")
@@ -253,20 +252,20 @@ public abstract class RawMods : IMods
                 foreach (var file in Directory.GetFiles($"{apkDir}/smali/com/yoyogames/runner"))
                 {
                     var content = File.ReadAllText(file);
-                    content = AndroidIDReplace(content, modName);
+                    content = AndroidIdReplace(content);
                     File.WriteAllText(file, content);
                 }
                 var am2rWrapperDir = new DirectoryInfo($"{apkDir}/smali/com/companyname/AM2RWrapper");
                 foreach (var file in am2rWrapperDir.GetFiles())
                 {
                     var content = File.ReadAllText(file.FullName);
-                    content = AndroidIDReplace(content, modName);
+                    content = AndroidIdReplace(content);
                     File.WriteAllText(file.FullName, content);
                 }
                 am2rWrapperDir.MoveTo($"{apkDir}/smali/com/companyname/{modName}");
 
                 var layoutContent = File.ReadAllText($"{apkDir}/res/layout/main.xml");
-                layoutContent = AndroidIDReplace(layoutContent, modName);
+                layoutContent = AndroidIdReplace(layoutContent);
                 File.WriteAllText($"{apkDir}/res/layout/main.xml", layoutContent);
             }
 
@@ -308,7 +307,7 @@ public abstract class RawMods : IMods
         File.Move(finalApkBuild, outputRawApkPath);
 
         // Clean up
-        Directory.Delete(tmp, true);
+        Directory.Delete(TempDir, true);
     }
     
     public static void PortToMac(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
@@ -323,8 +322,8 @@ public abstract class RawMods : IMods
             return;
         }
         
-        outputHandler = outputDelegate;
-        string baseTempDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        OutputHandler = outputDelegate;
+        string baseTempDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string extractDirectory = baseTempDirectory + "/extract";
         string appDirectory = baseTempDirectory + "/AM2R.app";
         string contentsDir = baseTempDirectory + "/Contents";
@@ -333,9 +332,9 @@ public abstract class RawMods : IMods
         // Check if temp folder exists, delete if yes, copy bare runner to there
         if (Directory.Exists(baseTempDirectory))
             Directory.Delete(baseTempDirectory, true);
-        SendOutput("Copying Runner...");
+        SendOutput("Copying Mac Runner...");
         Directory.CreateDirectory(contentsDir);
-        HelperMethods.DirectoryCopy(utilDir + "/Contents", contentsDir, true);
+        HelperMethods.DirectoryCopy(UtilDir + "/Contents", contentsDir);
 
         // Extract mod to temp location
         SendOutput("Extracting Mac...");
@@ -380,15 +379,15 @@ public abstract class RawMods : IMods
         // TODO: replace this via built-in lib
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            bin = "\"" + utilDir + "/UTMTCli/UndertaleModCli.exe\"";
+            bin = "\"" + UtilDir + "/UTMTCli/UndertaleModCli.exe\"";
             args = "";
         }
         else
         {
             // First chmod the file, just in case
-            Process.Start("chmod", "+x \"" + utilDir + "/UTMTCli/UndertaleModCli.dll\"");
+            Process.Start("chmod", "+x \"" + UtilDir + "/UTMTCli/UndertaleModCli.dll\"");
             bin = "dotnet";
-            args = "\"" + utilDir + "/UTMTCli/UndertaleModCli.dll\" ";
+            args = "\"" + UtilDir + "/UTMTCli/UndertaleModCli.dll\" ";
             // Also chmod the runner. Just in case.
             Process.Start("chmod", "+x \"" + contentsDir + "/MacOS/Mac_Runner");
         }
@@ -396,7 +395,7 @@ public abstract class RawMods : IMods
         ProcessStartInfo pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
-            Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + utilDir + "/bc16AndRemoveFunctions.csx\" -o \"" + extractDirectory + "/game.ios\"",
+            Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + UtilDir + "/bc16AndRemoveFunctions.csx\" -o \"" + extractDirectory + "/game.ios\"",
             CreateNoWindow = false
         };
         Process p = new Process { StartInfo = pStartInfo };
@@ -437,6 +436,6 @@ public abstract class RawMods : IMods
         ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
 
         // Clean up
-        Directory.Delete(tmp, true);
+        Directory.Delete(TempDir, true);
     }
 }

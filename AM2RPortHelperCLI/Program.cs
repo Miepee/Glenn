@@ -34,7 +34,7 @@ internal static class Program
             androidOption,
             macOption,
             nameOption,
-            internetOption,
+            internetOption
         };
         rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption,
                                macOption, nameOption, internetOption, verboseOption);
@@ -64,16 +64,16 @@ internal static class Program
 
         if (linuxPath is not null)
         {
-            RawMods.PortToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawModsBase.PortToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (androidPath is not null)
         {
-            RawMods.PortToAndroid(inputModPath.FullName, androidPath.FullName,
+            RawModsBase.PortToAndroid(inputModPath.FullName, androidPath.FullName,
                                             useCustomSave, usesInternet, beVerbose ? OutputHandlerDelegate : null);
         }
         if (macPath is not null)
         {
-            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawModsBase.PortToMac(inputModPath.FullName, macPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (beVerbose)
             Console.WriteLine("Done.");
@@ -142,7 +142,7 @@ internal static class Program
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
+            RawModsBase.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
         }
 
         if (androidSelected)
@@ -181,16 +181,14 @@ internal static class Program
             }
             while (customSaveSelected == null);
 
-            RawMods.PortToAndroid(modZipPath, androidPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
+            RawModsBase.PortToAndroid(modZipPath, androidPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
             if (File.Exists(macPath))
                 File.Delete(macPath);
             
-            Console.WriteLine("Mac requires a name! Please enter one (no special characters!):");
-            string modName = Console.ReadLine();
-            RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate);
+            RawModsBase.PortToMac(modZipPath, macPath, OutputHandlerDelegate);
         }
         
         Console.WriteLine("Successfully finished!");
@@ -199,10 +197,10 @@ internal static class Program
     // We want people to also provide zips that don't end in .zip. If it turns out to not be a zip, it'll still throw later.
     private static bool IsValidInputZip(string path)
     {
-        return path != null && (File.Exists(path));
+        return path != null && File.Exists(path);
     }
 
-    private static bool IsValidInputZip(FileInfo path)
+    private static bool IsValidInputZip(FileSystemInfo path)
     {
         return IsValidInputZip(path?.FullName);
     }

@@ -2,7 +2,7 @@
 
 namespace AM2RPortHelperLib;
 
-public abstract class LauncherMods : IMods
+public abstract class LauncherModsBase : ModsBase
 {
     /// <summary>
     /// Ports a Mod zip intended to be installed via the AM2RLauncher to other operating systems.
@@ -17,8 +17,8 @@ public abstract class LauncherMods : IMods
     /// TODO: other exceptions
     public static void PortLauncherMod(string inputLauncherZipPath, Core.ModOS modTarget, bool includeAndroid, string outputLauncherZipPath, string am2r11ZipPath = null, OutputHandlerDelegate outputDelegate = null)
     {
-        outputHandler = outputDelegate;  
-        string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputLauncherZipPath);
+        OutputHandler = outputDelegate;  
+        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputLauncherZipPath);
         string filesToCopyDir = extractDirectory + "/files_to_copy";
         
         // Check if temp folder exists, delete if yes, extract zip to there
@@ -62,7 +62,7 @@ public abstract class LauncherMods : IMods
                 
                 // get proper runner
                 File.Delete(extractDirectory + "/AM2R.xdelta");
-                File.Copy(utilDir + "/windowsRunner.xdelta", extractDirectory + "/AM2R.xdelta");
+                File.Copy(UtilDir + "/windowsRunner.xdelta", extractDirectory + "/AM2R.xdelta");
                 
                 // Windows doesn't care about capitalization and because I can't predict how it originally was, I'm going to ignore it.
                 
@@ -91,7 +91,7 @@ public abstract class LauncherMods : IMods
 
                 // get proper runner
                 File.Delete(extractDirectory + "/AM2R.xdelta");
-                File.Copy(utilDir + "/linuxRunner.xdelta", extractDirectory + "/AM2R.xdelta");
+                File.Copy(UtilDir + "/linuxRunner.xdelta", extractDirectory + "/AM2R.xdelta");
                 
                 // Linux needs everything lowercased. Only needed if we're coming from Windows
                 if (currentOS == "Windows")
@@ -99,9 +99,9 @@ public abstract class LauncherMods : IMods
                 
                 // Windows doesn't have icon/splash, so we copy them over from here
                 if (!File.Exists(filesToCopyDir + "/icon.png"))
-                    File.Copy(utilDir + "/icon.png", filesToCopyDir + "/icon.png");
+                    File.Copy(UtilDir + "/icon.png", filesToCopyDir + "/icon.png");
                 if (!File.Exists(filesToCopyDir + "/splash.png"))
-                    File.Copy(utilDir + "/splash.png", filesToCopyDir + "/splash.png");
+                    File.Copy(UtilDir + "/splash.png", filesToCopyDir + "/splash.png");
 
                 // Properly set profile.xml variables
                 profile.OperatingSystem = "Linux";

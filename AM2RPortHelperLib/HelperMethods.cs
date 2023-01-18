@@ -61,7 +61,7 @@ public static class HelperMethods
         foreach (DirectoryInfo subDir in dirs)
         {
             string tempPath = Path.Combine(destDirName, subDir.Name);
-            DirectoryCopy(subDir.FullName, tempPath, true);
+            DirectoryCopy(subDir.FullName, tempPath);
         }
     }
     

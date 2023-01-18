@@ -40,7 +40,7 @@ public partial class MainForm : Form
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxAndroidRequiresInternet);
         mainLayout.EndCentered();
-        mainLayout.AddRow(new Label() { Height = 5 });
+        mainLayout.AddRow(new Label { Height = 5 });
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxUseCustomSave);
         mainLayout.EndCentered();
@@ -101,7 +101,7 @@ public partial class MainForm : Form
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate));
+            await Task.Run(() => RawModsBase.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate));
         }
         if (checkboxAndroid.Checked.Value)
         {
@@ -110,7 +110,7 @@ public partial class MainForm : Form
 
             bool useCustomSave = checkboxUseCustomSave.Checked.Value;
             bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
-            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, useCustomSave, useInternet, OutputHandlerDelegate));
+            await Task.Run(() => RawModsBase.PortToAndroid(modZipPath, androidPath, useCustomSave, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
@@ -118,7 +118,7 @@ public partial class MainForm : Form
                 File.Delete(macPath);
             
             string modName = checkboxUseCustomSave.Text;
-            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate));
+            await Task.Run(() => RawModsBase.PortToMac(modZipPath, macPath, OutputHandlerDelegate));
         }
 
         labelProgress.Text = "Done!";
@@ -139,12 +139,9 @@ public partial class MainForm : Form
     
     private void ShouldButtonPortBeEnabled(object sender, EventArgs e)
     {
-        // there needs to be a selected mod + any checkbox (if mac, then there needs to be a name)
-        if ((!String.IsNullOrWhiteSpace(filePicker.FilePath) 
-            && ((checkboxAndroid.Checked.Value && !checkboxMac.Checked.Value)) 
-            || (checkboxLinux.Checked.Value && !checkboxMac.Checked.Value) 
-            || (checkboxMac.Checked.Value && !String.IsNullOrWhiteSpace(checkboxUseCustomSave.Text))))
-            
+        // there needs to be a selected mod + any checkbox
+        if (!String.IsNullOrWhiteSpace(filePicker.FilePath) && 
+            (checkboxAndroid.Checked.Value || checkboxLinux.Checked.Value || checkboxMac.Checked.Value))
             buttonPort.Enabled = true;
         else
             buttonPort.Enabled = false;

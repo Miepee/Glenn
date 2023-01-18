@@ -26,7 +26,6 @@ public static class Serializer
         memStream.Flush();
         memStream.Close();
         memStream.Dispose();
-        memStream = null;
 
         return xml;
     }
