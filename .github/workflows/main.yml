@@ -26,7 +26,9 @@ jobs:
     
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
@@ -69,7 +71,9 @@ jobs:
     
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with: 
+        submodules: true
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
