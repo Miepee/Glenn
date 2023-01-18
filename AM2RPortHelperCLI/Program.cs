@@ -16,6 +16,7 @@ internal static class Program
     private static int Main(string[] args)
     {
         //LauncherMods.PortLauncherMod("/home/narr/Downloads/UnofficialMultitroidAPKTest1_6b.zip", Core.ModOS.Linux, true, "./foo.zip");
+        //TODO: add options to icon file paths
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
@@ -64,16 +65,16 @@ internal static class Program
 
         if (linuxPath is not null)
         {
-            RawModsBase.PortToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (androidPath is not null)
         {
-            RawModsBase.PortToAndroid(inputModPath.FullName, androidPath.FullName,
+            RawMods.PortToAndroid(inputModPath.FullName, androidPath.FullName,
                                             useCustomSave, usesInternet, beVerbose ? OutputHandlerDelegate : null);
         }
         if (macPath is not null)
         {
-            RawModsBase.PortToMac(inputModPath.FullName, macPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, beVerbose ? OutputHandlerDelegate : null);
         }
         if (beVerbose)
             Console.WriteLine("Done.");
@@ -142,7 +143,7 @@ internal static class Program
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            RawModsBase.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
+            RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
         }
 
         if (androidSelected)
@@ -181,14 +182,14 @@ internal static class Program
             }
             while (customSaveSelected == null);
 
-            RawModsBase.PortToAndroid(modZipPath, androidPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
+            RawMods.PortToAndroid(modZipPath, androidPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
             if (File.Exists(macPath))
                 File.Delete(macPath);
             
-            RawModsBase.PortToMac(modZipPath, macPath, OutputHandlerDelegate);
+            RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate);
         }
         
         Console.WriteLine("Successfully finished!");

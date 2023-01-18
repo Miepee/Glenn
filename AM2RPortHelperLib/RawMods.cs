@@ -9,10 +9,12 @@ using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
 
-public abstract class RawModsBase : ModsBase
+public abstract class RawMods : ModsBase
 {
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
     // But until some person actually shows up that needs this feature, I'm too lazy to implement it
+    
+    // TODO: These methods should accept paths for icons/splashes
     
     /// <summary>
     /// Determines for which OS a raw mod zip was made for. 
