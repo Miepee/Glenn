@@ -14,7 +14,7 @@ namespace AM2RPortHelperLib {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    public class Resources {
         
         private static System.Resources.ResourceManager resourceMan;
         
@@ -48,7 +48,7 @@ namespace AM2RPortHelperLib {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] icon {
+        public static byte[] icon {
             get {
                 object obj = ResourceManager.GetObject("icon", resourceCulture);
                 return ((byte[])(obj));
@@ -58,7 +58,7 @@ namespace AM2RPortHelperLib {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] splash {
+        public static byte[] splash {
             get {
                 object obj = ResourceManager.GetObject("splash", resourceCulture);
                 return ((byte[])(obj));
@@ -68,7 +68,7 @@ namespace AM2RPortHelperLib {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] splashAndroid {
+        public static byte[] splashAndroid {
             get {
                 object obj = ResourceManager.GetObject("splashAndroid", resourceCulture);
                 return ((byte[])(obj));

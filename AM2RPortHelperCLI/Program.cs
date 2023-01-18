@@ -24,9 +24,10 @@ internal static class Program
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
-        var iconOption = new Option<FileInfo>(new[] { "-c", "--icon " }, "The file path to an icon PNG that should be used for the taskbar/dock/home screen. " +
+        var iconOption = new Option<FileInfo>(new[] { "-c", "--icon" }, "The file path to an icon PNG that should be used for the taskbar/dock/home screen. " +
                                                                          "If this is not set, it will read \"icon.png\" from the config folder. If that file does not exist, a stock icon will be used.");
-        var splashOption = new Option<FileInfo>(new[] { "-p", "--splash " }, "The file path to a splash PNG that should be used when booting the game. " +
+        var splashOption = new Option<FileInfo>(new[] { "-p", "--splash" }, "The file path to a splash PNG that should be used when booting the game. " +
+                                                                            //TODO: only use splash.png
                                                                          "If this is not set, it will read \"splash.png\" (or \"splashAndroid.png\" for Android) from the config folder. " +
                                                                          "If that file does not exist, a stock splash will be used.");
         // TODO: double check whether its not possible to have the same splash screen for both desktop and mobile

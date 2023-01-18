@@ -11,12 +11,26 @@ namespace AM2RPortHelperGUI;
 
 public partial class MainForm : Form
 {
-    // TODO: present icons so user can edit them! Also read them from config dir if they exist
+    private readonly string userIconPath = Core.ConfigDir + "/icon.png";
+    private readonly string userSplashPath = Core.ConfigDir + "/splash.png";
+    
+    private static byte[] GetByteArrayFromResource(string nameOfResource)
+    {
+        if (File.Exists(Core.ConfigDir + "/" + nameOfResource + ".png"))
+            return File.ReadAllBytes(Core.ConfigDir + "/" + nameOfResource + ".png");
+        
+        return nameOfResource switch
+        {
+            nameof(Resources.icon) => Resources.icon,
+            nameof(Resources.splash) => Resources.splash,
+            _ => throw new InvalidDataException("Invalid Resource name given!")
+        };
+    }
+    
     public MainForm()
     {
         Title = $"AM2RPortHelper - v{Core.Version}";
         MinimumSize = new Size(260, 280);
-
         
         var mainLayout = new DynamicLayout();
         mainLayout.BeginVertical();
@@ -45,7 +59,21 @@ public partial class MainForm : Form
         mainLayout.BeginCentered();
         mainLayout.AddRow(checkboxUseCustomSave);
         mainLayout.EndCentered();
+        mainLayout.AddRow(new Label { Height = 5 });
+        mainLayout.BeginCentered();
+        mainLayout.AddRow(buttonEditIcon);
+        mainLayout.AddRow(new Label { Height = 5 });
+        mainLayout.AddRow(imageViewIcon);
+        mainLayout.AddRow(new Label { Height = 5 });
+        mainLayout.EndCentered();
         mainLayout.AddSpace();
+        mainLayout.AddRow(new Label { Height = 5 });
+        mainLayout.BeginCentered();
+        mainLayout.AddRow(buttonEditSplash);
+        mainLayout.AddRow(new Label { Height = 5 });
+        mainLayout.AddRow(imageViewSplash);
+        mainLayout.AddRow(new Label { Height = 5 });
+        mainLayout.EndCentered();
         mainLayout.BeginVertical();
         mainLayout.AddRange(new Label { Height = 10 }, buttonPort, null);
         mainLayout.EndVertical();
@@ -83,8 +111,29 @@ public partial class MainForm : Form
         checkboxUseCustomSave.TextChanged += ShouldButtonPortBeEnabled;
         filePicker.FilePathChanged += ShouldButtonPortBeEnabled;
         buttonPort.Click += ButtonPortOnClick;
+        buttonEditIcon.Click += ButtonEditIconClick;
+        buttonEditSplash.Click += ButtonEditSplashClick;
     }
-    
+    private void ButtonEditSplashClick(object sender, EventArgs e)
+    {
+        var dialog = new OpenFileDialog();
+        if (dialog.ShowDialog(this) != DialogResult.Ok)
+            return;
+        
+        File.Copy(dialog.FileName, userSplashPath, true);
+        imageViewSplash.Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.splash)));
+    }
+    private void ButtonEditIconClick(object sender, EventArgs e)
+    {
+        var dialog = new OpenFileDialog();
+        if (dialog.ShowDialog(this) != DialogResult.Ok)
+            return;
+        
+        File.Copy(dialog.FileName, userIconPath, true);
+
+        imageViewIcon.Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.icon)));
+    }
+
     // Helper functions
     private async void ButtonPortOnClick(object sender, EventArgs e)
     {
@@ -97,12 +146,15 @@ public partial class MainForm : Form
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
         string macPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_MACOS.zip";
 
+        string iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), userIconPath);
+        string splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), userSplashPath);
+        
         if (checkboxLinux.Checked.Value)
         {
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, null, null, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, iconPath, splashPath, OutputHandlerDelegate));
         }
         if (checkboxAndroid.Checked.Value)
         {
@@ -111,7 +163,7 @@ public partial class MainForm : Form
 
             bool useCustomSave = checkboxUseCustomSave.Checked.Value;
             bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
-            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, null, null, useCustomSave, useInternet, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, iconPath, splashPath, useCustomSave, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
@@ -119,7 +171,7 @@ public partial class MainForm : Form
                 File.Delete(macPath);
             
             string modName = checkboxUseCustomSave.Text;
-            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, null, null, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, iconPath, splashPath, OutputHandlerDelegate));
         }
 
         labelProgress.Text = "Done!";
@@ -208,6 +260,26 @@ public partial class MainForm : Form
         Text = "Use custom save location (See tooltip for info)",
         ToolTip = "Only affects Android. Determines whether Android will use a custom save location based on its display name. If you don't " + 
                   "want your mod overwriting normal AM2R on Android, you should check this."
+    };
+    
+    private readonly ImageView imageViewIcon = new ImageView
+    {
+        Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.icon))),
+        Size = new Size(64, 64)
+    };
+    private readonly Button buttonEditIcon = new Button
+    {
+        Text = "Edit Icon:"
+    };
+    
+    private readonly ImageView imageViewSplash = new ImageView
+    {
+        Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.splash))),
+        Size = new Size(128, 96),
+    };
+    private readonly Button buttonEditSplash = new Button
+    {
+        Text = "Edit Splash:"
     };
 
     private readonly Button buttonPort = new Button

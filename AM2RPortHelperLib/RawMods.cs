@@ -43,7 +43,7 @@ public abstract class RawMods : ModsBase
     /// <param name="userIconPath"></param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException"></exception>
-    private static string GetProperPathToBuiltinIcons(string nameOfResource, string userIconPath)
+    public static string GetProperPathToBuiltinIcons(string nameOfResource, string userIconPath)
     {
         string SubCaseFunction(string resource)
         {
