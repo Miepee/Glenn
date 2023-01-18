@@ -14,8 +14,12 @@ public abstract class RawModsBase : ModsBase
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
     // But until some person actually shows up that needs this feature, I'm too lazy to implement it
     
-    // TODO: documentation
-    
+    /// <summary>
+    /// Determines for which OS a raw mod zip was made for. 
+    /// </summary>
+    /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
+    /// <returns>The OS for which the zip was made for as <see cref="ModOS"/>.</returns>
+    /// <exception cref="NotSupportedException">The OS for which the zip was made for could not be determined.</exception>
     public static ModOS GetModOSOfRawZip(string inputRawZipPath)
     {
         ZipArchive archive = ZipFile.OpenRead(inputRawZipPath);
@@ -32,6 +36,12 @@ public abstract class RawModsBase : ModsBase
         throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="nameOfResource"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidDataException"></exception>
     private static string GetProperPathToBuiltinIcons(string nameOfResource)
     {
         string SubCaseFunction(string resource)
@@ -71,6 +81,13 @@ public abstract class RawModsBase : ModsBase
         
     }
     
+    /// <summary>
+    /// Ports a raw AM2R mod zip for Linux. 
+    /// </summary>
+    /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
+    /// <param name="outputRawZipPath">The path where the ported Linux mod zip should be saved to.</param>
+    /// <param name="outputDelegate">A delegate to post output info to.</param>
+    /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
     public static void PortToLinux(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
@@ -132,6 +149,16 @@ public abstract class RawModsBase : ModsBase
         Directory.Delete(TempDir, true);
     }
     
+    /// <summary>
+    /// Ports a raw AM2R mod zip for Android.
+    /// </summary>
+    /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
+    /// <param name="outputRawApkPath">The path where the ported Android mod apk should be saved to.</param>
+    /// <param name="useCustomSaveDirectory">Whether the mod should use a custom save location on Android.</param>
+    /// <param name="usesInternet">Whether the mod needs an Internet connection.</param>
+    /// <param name="outputDelegate">A delegate to post output info to.</param>
+    /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
+    /// <exception cref="InvalidDataException"><paramref name="useCustomSaveDirectory"/> was given, but the display name of the mod is unsuitable as a name for the directory.</exception>
     public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
@@ -310,6 +337,13 @@ public abstract class RawModsBase : ModsBase
         Directory.Delete(TempDir, true);
     }
     
+    /// <summary>
+    /// Ports a raw AM2R mod zip for macOS.
+    /// </summary>
+    /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
+    /// <param name="outputRawZipPath">he path where the ported Mac mod zip should be saved to.</param>
+    /// <param name="outputDelegate">A delegate to post output info to.</param>
+    /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
     public static void PortToMac(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
