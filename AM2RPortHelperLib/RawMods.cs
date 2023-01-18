@@ -14,8 +14,6 @@ public abstract class RawMods : ModsBase
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
     // But until some person actually shows up that needs this feature, I'm too lazy to implement it
     
-    // TODO: These methods should accept paths for icons/splashes
-    
     /// <summary>
     /// Determines for which OS a raw mod zip was made for. 
     /// </summary>
@@ -42,15 +40,15 @@ public abstract class RawMods : ModsBase
     /// 
     /// </summary>
     /// <param name="nameOfResource"></param>
+    /// <param name="userIconPath"></param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException"></exception>
-    private static string GetProperPathToBuiltinIcons(string nameOfResource)
+    private static string GetProperPathToBuiltinIcons(string nameOfResource, string userIconPath)
     {
         string SubCaseFunction(string resource)
         {
-            string origPath = ConfigDir + "/" + resource;
-            if (File.Exists(origPath))
-                return origPath;
+            if (File.Exists(userIconPath))
+                return userIconPath;
 
             var byteArray = resource switch
             {
@@ -61,8 +59,8 @@ public abstract class RawMods : ModsBase
             };
             
             Image.Load(byteArray).SaveAsPng(TempDir + "/" + resource);
-            origPath = TempDir + "/" + resource;
-            return origPath;
+            userIconPath = TempDir + "/" + resource;
+            return userIconPath;
         }
         
         switch (nameOfResource)
@@ -82,15 +80,20 @@ public abstract class RawMods : ModsBase
     {
         
     }
-    
+
     /// <summary>
     /// Ports a raw AM2R mod zip for Linux. 
     /// </summary>
     /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
     /// <param name="outputRawZipPath">The path where the ported Linux mod zip should be saved to.</param>
+    /// <param name="pathToIcon">The path to an icon PNG image that should be used on Linux for i.e. the taskbar.
+    /// If this is <see langword="null"/>, a default stock icon is used.</param>
+    /// <param name="pathToSplashScreen">The path to an splash PNG image that should be used on Linux when starting the game.
+    /// If this is <see langword="null"/>, a default stock splash screen is used.</param>
     /// <param name="outputDelegate">A delegate to post output info to.</param>
     /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
-    public static void PortToLinux(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
+    public static void PortToLinux(string inputRawZipPath, string outputRawZipPath, string pathToIcon = null, string pathToSplashScreen = null,
+                                   OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         SendOutput("Zip Recognized as " + currentOS);
@@ -135,8 +138,8 @@ public abstract class RawMods : ModsBase
         }
         
         File.Copy(UtilDir + "/runner", extractDirectory + "/runner");
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), assetsDir + "/icon.png");
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), assetsDir + "/splash.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png");
 
         //recursively lowercase everything in the assets folder
         HelperMethods.LowercaseFolder(assetsDir);
@@ -148,7 +151,7 @@ public abstract class RawMods : ModsBase
         // Clean up
         Directory.Delete(TempDir, true);
     }
-    
+
     /// <summary>
     /// Ports a raw AM2R mod zip for Android.
     /// </summary>
@@ -156,10 +159,15 @@ public abstract class RawMods : ModsBase
     /// <param name="outputRawApkPath">The path where the ported Android mod apk should be saved to.</param>
     /// <param name="useCustomSaveDirectory">Whether the mod should use a custom save location on Android.</param>
     /// <param name="usesInternet">Whether the mod needs an Internet connection.</param>
+    /// <param name="pathToIcon">The path to an icon PNG image that should be used on Android for i.e. the home screen.
+    /// If this is <see langword="null"/>, a default stock icon is used.</param>
+    /// <param name="pathToSplashScreen">The path to an splash PNG image that should be used on Android when starting the game.
+    /// If this is <see langword="null"/>, a default stock splash screen is used.</param>
     /// <param name="outputDelegate">A delegate to post output info to.</param>
     /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
     /// <exception cref="InvalidDataException"><paramref name="useCustomSaveDirectory"/> was given, but the display name of the mod is unsuitable as a name for the directory.</exception>
-    public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
+    public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, string pathToIcon = null, string pathToSplashScreen = null, 
+                                     bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         SendOutput("Zip Recognized as " + currentOS);
@@ -222,7 +230,7 @@ public abstract class RawMods : ModsBase
         }
         
         // The wrapper always has a splash image, so we want to overwrite it.
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splashAndroid)), apkAssetsDir + "/splash.png", true);
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splashAndroid), pathToSplashScreen), apkAssetsDir + "/splash.png", true);
 
         //recursively lowercase everything in the assets folder
         HelperMethods.LowercaseFolder(apkAssetsDir);
@@ -235,7 +243,7 @@ public abstract class RawMods : ModsBase
         // Edit the icons in the apk. Wrapper always has these, so we need to overwrite these too.
         string resPath = apkDir + "/res";
         // Icon should only be read from if its there, otherwise default frog icon should be in the assembly
-        string origPath = GetProperPathToBuiltinIcons(nameof(Resources.icon));
+        string origPath = GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon);
         HelperMethods.SaveAndroidIcon(origPath, 96, resPath + "/drawable/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 72, resPath + "/drawable-hdpi-v4/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 36, resPath + "/drawable-ldpi-v4/icon.png");
@@ -342,9 +350,14 @@ public abstract class RawMods : ModsBase
     /// </summary>
     /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
     /// <param name="outputRawZipPath">he path where the ported Mac mod zip should be saved to.</param>
+    /// <param name="pathToIcon">The path to an icon PNG image that should be used on Mac for i.e. the dock.
+    /// If this is <see langword="null"/>, a default stock icon is used.</param>
+    /// <param name="pathToSplashScreen">The path to an splash PNG image that should be used on macOS when starting the game.
+    /// If this is <see langword="null"/>, a default stock splash screen is used.</param>
     /// <param name="outputDelegate">A delegate to post output info to.</param>
     /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
-    public static void PortToMac(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
+    public static void PortToMac(string inputRawZipPath, string outputRawZipPath, string pathToIcon = null, string pathToSplashScreen = null,
+                                 OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         SendOutput("Zip Recognized as " + currentOS);
@@ -392,8 +405,8 @@ public abstract class RawMods : ModsBase
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
         }
 
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), extractDirectory + "/icon.png");
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), extractDirectory + "/splash.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), extractDirectory + "/icon.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), extractDirectory + "/splash.png");
         
         // Delete fonts folder if it exists, because I need to convert bytecode version from game and newer version doesn't support font loading
         if (Directory.Exists(extractDirectory + "/lang/fonts"))

@@ -3,6 +3,7 @@ using System.CommandLine;
 using System.IO;
 using System.Threading.Tasks;
 using AM2RPortHelperLib;
+using Microsoft.Win32.SafeHandles;
 
 namespace AM2RPortHelper;
 
@@ -16,15 +17,22 @@ internal static class Program
     private static int Main(string[] args)
     {
         //LauncherMods.PortLauncherMod("/home/narr/Downloads/UnofficialMultitroidAPKTest1_6b.zip", Core.ModOS.Linux, true, "./foo.zip");
-        //TODO: add options to icon file paths
+        //TODO: If icon paths are not set, these are currently not taken from the config dir!
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
-        var nameOption = new Option<bool>(new[] { "-s", "--customsave" }, "Whether the Android Port should use a custom save location. Has no effect on anything else.");
-        var internetOption = new Option<bool>(new[] { "-w", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect to other OS.");
+        var iconOption = new Option<FileInfo>(new[] { "-c", "--icon " }, "The file path to an icon PNG that should be used for the taskbar/dock/home screen. " +
+                                                                         "If this is not set, it will read \"icon.png\" from the config folder. If that file does not exist, a stock icon will be used.");
+        var splashOption = new Option<FileInfo>(new[] { "-p", "--splash " }, "The file path to a splash PNG that should be used when booting the game. " +
+                                                                         "If this is not set, it will read \"splash.png\" (or \"splashAndroid.png\" for Android) from the config folder. " +
+                                                                         "If that file does not exist, a stock splash will be used.");
+        // TODO: double check whether its not possible to have the same splash screen for both desktop and mobile
+        var customSaveOption = new Option<bool>(new[] { "-s", "--customsave" }, "Whether the Android Port should use a custom save location. Has no effect on other OS.");
+        
+        var internetOption = new Option<bool>(new[] { "-w", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect on other OS.");
         var verboseOption = new Option<bool>(new[] { "-v", "--verbose" }, "Whether to show verbose output.");
 
         RootCommand rootCommand = new RootCommand("A utility to port Windows AM2R Mods to other operating systems.")
@@ -34,18 +42,33 @@ internal static class Program
             linuxOption,
             androidOption,
             macOption,
-            nameOption,
+            iconOption,
+            splashOption,
+            customSaveOption,
             internetOption
         };
-        rootCommand.SetHandler(RootMethod, interactiveOption, fileOption, linuxOption, androidOption,
-                               macOption, nameOption, internetOption, verboseOption);
 
+        rootCommand.SetHandler(context =>
+        {
+            bool interactive = context.ParseResult.GetValueForOption(interactiveOption);
+            FileInfo inputModPath = context.ParseResult.GetValueForOption(fileOption);
+            FileInfo linuxPath = context.ParseResult.GetValueForOption(linuxOption);
+            FileInfo androidPath = context.ParseResult.GetValueForOption(androidOption);
+            FileInfo macPath = context.ParseResult.GetValueForOption(macOption);
+            FileInfo splashPath = context.ParseResult.GetValueForOption(splashOption);
+            bool useCustomSave = context.ParseResult.GetValueForOption(customSaveOption);
+            bool usesInternet = context.ParseResult.GetValueForOption(internetOption);
+            bool beVerbose = context.ParseResult.GetValueForOption(verboseOption);
+            FileInfo iconPath = context.ParseResult.GetValueForOption(iconOption);
+
+            return RootMethod(interactive, inputModPath, linuxPath, androidPath, macPath, splashPath, iconPath, useCustomSave, usesInternet, beVerbose);
+        });
         
-        return rootCommand.Invoke(args);
+        return rootCommand.InvokeAsync(args).Result;
     }
 #pragma warning disable CS1998
     private static async Task<int> RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath,
-                                              bool useCustomSave, bool usesInternet, bool beVerbose)
+                                              FileInfo iconPath, FileInfo splashPath, bool useCustomSave, bool usesInternet, bool beVerbose)
 #pragma warning restore CS1998
     {
         if (interactive || beVerbose)
@@ -62,19 +85,25 @@ internal static class Program
             Console.Error.WriteLine("Input path does not exist, or does not point to a zip file!");
             return 1;
         }
+        
+        void LocalOutput(string output)
+        {
+            if (beVerbose)
+                Console.WriteLine(output);
+        }
 
         if (linuxPath is not null)
         {
-            RawMods.PortToLinux(inputModPath.FullName, linuxPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToLinux(inputModPath.FullName, linuxPath.FullName, iconPath?.FullName, splashPath?.FullName, LocalOutput);
         }
         if (androidPath is not null)
         {
             RawMods.PortToAndroid(inputModPath.FullName, androidPath.FullName,
-                                            useCustomSave, usesInternet, beVerbose ? OutputHandlerDelegate : null);
+                                  iconPath?.FullName, splashPath?.FullName, useCustomSave, usesInternet, LocalOutput);
         }
         if (macPath is not null)
         {
-            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, beVerbose ? OutputHandlerDelegate : null);
+            RawMods.PortToMac(inputModPath.FullName, macPath.FullName, iconPath?.FullName, splashPath?.FullName, LocalOutput);
         }
         if (beVerbose)
             Console.WriteLine("Done.");
@@ -131,7 +160,17 @@ internal static class Program
                     break;
             }
         } while (invalidOS);
+        
+        // Ask for Icon
+        Console.WriteLine("Insert the path to your custom PNG icon. If an empty or nonexistant file is provided, the defaults will be used instead.");
+        string iconPath = Console.ReadLine();
+        if (String.IsNullOrWhiteSpace(iconPath) || !File.Exists(iconPath)) iconPath = null;
 
+        // Ask for Splash
+        Console.WriteLine("Insert the path to your custom PNG splash. If an empty or nonexistant file is provided, the defaults will be used instead.");
+        string splashPath = Console.ReadLine();
+        if (String.IsNullOrWhiteSpace(splashPath) || !File.Exists(splashPath)) splashPath = null;
+        
         // Port everything
         string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
@@ -143,7 +182,7 @@ internal static class Program
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate);
+            RawMods.PortToLinux(modZipPath, linuxPath, iconPath, splashPath, OutputHandlerDelegate);
         }
 
         if (androidSelected)
@@ -151,7 +190,6 @@ internal static class Program
             if (File.Exists(androidPath))
                 File.Delete(androidPath);
             
-            // TODO: ask for modname - temp until the other todo is fixed where it gets taht automatically
             bool? internetSelected = null;
             do
             {
@@ -182,14 +220,14 @@ internal static class Program
             }
             while (customSaveSelected == null);
 
-            RawMods.PortToAndroid(modZipPath, androidPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
+            RawMods.PortToAndroid(modZipPath, androidPath, iconPath, splashPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
             if (File.Exists(macPath))
                 File.Delete(macPath);
             
-            RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate);
+            RawMods.PortToMac(modZipPath, macPath,  iconPath, splashPath, OutputHandlerDelegate);
         }
         
         Console.WriteLine("Successfully finished!");

@@ -11,7 +11,7 @@ namespace AM2RPortHelperGUI;
 
 public partial class MainForm : Form
 {
-    // TODO: present icons so user can edit them
+    // TODO: present icons so user can edit them! Also read them from config dir if they exist
     public MainForm()
     {
         Title = $"AM2RPortHelper - v{Core.Version}";
@@ -102,7 +102,7 @@ public partial class MainForm : Form
             if (File.Exists(linuxPath))
                 File.Delete(linuxPath);
             
-            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, null, null, OutputHandlerDelegate));
         }
         if (checkboxAndroid.Checked.Value)
         {
@@ -111,7 +111,7 @@ public partial class MainForm : Form
 
             bool useCustomSave = checkboxUseCustomSave.Checked.Value;
             bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
-            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, useCustomSave, useInternet, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, null, null, useCustomSave, useInternet, OutputHandlerDelegate));
         }
         if (checkboxMac.Checked.Value)
         {
@@ -119,7 +119,7 @@ public partial class MainForm : Form
                 File.Delete(macPath);
             
             string modName = checkboxUseCustomSave.Text;
-            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, OutputHandlerDelegate));
+            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, null, null, OutputHandlerDelegate));
         }
 
         labelProgress.Text = "Done!";
