@@ -14,7 +14,7 @@ public abstract class IMods
     /// <summary>
     /// A temporary directory
     /// </summary>
-    protected static readonly string tmp = Path.GetTempPath();
+    protected static readonly string tmp = Path.GetTempPath() + "/PortHelper/";
     
     /// <summary>
     /// The current directory of the AM2RPortHelper program.

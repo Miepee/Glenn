@@ -73,7 +73,7 @@ public static class HelperMethods
     /// <param name="filePath">The filepath where the resized image should be saved to.</param>
     /// <example>
     /// <code>
-    /// Image iconPath = Image.Load("iconPath.png");
+    /// string iconPath = "iconPath.png";
     /// SaveAndroidIcon(iconPath, 128, "128.png");
     /// </code>
     /// </example>
@@ -84,7 +84,7 @@ public static class HelperMethods
         picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
         picture.SaveAsPng(filePath);
     }
-
+    
     /// <summary>
     /// Calculates the SHA256 hash of a specified file.
     /// </summary>

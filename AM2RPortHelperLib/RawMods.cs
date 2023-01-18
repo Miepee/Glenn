@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text.RegularExpressions;
+using SixLabors.ImageSharp;
 using UndertaleModLib;
 using static AM2RPortHelperLib.Core;
 
@@ -29,7 +31,41 @@ public abstract class RawMods : IMods
         
         throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
     }
-    
+
+    private static string GetProperPathToBuiltinIcons(string nameOfResource)
+    {
+        string subCaseFunction(string resource)
+        {
+            // TODO: default path should be in XDG_CONFIG
+            string origPath = utilDir + "/" + resource;
+            if (File.Exists(origPath))
+                return origPath;
+
+            var byteArray = resource switch
+            {
+                nameof(Resources.icon) + ".png" => Resources.icon,
+                nameof(Resources.splash) + ".png" => Resources.splash,
+                nameof(Resources.splashAndroid) + ".png" => Resources.splashAndroid,
+                _ => throw new InvalidDataException("SubCaseFunction was called with an improper resource!")
+            };
+            
+            Image.Load(byteArray).SaveAsPng(tmp + "/" + resource);
+            origPath = tmp + "/" + resource;
+            return origPath;
+        }
+        
+        switch (nameOfResource)
+        {
+            case nameof(Resources.icon):
+                return subCaseFunction(nameof(Resources.icon) + ".png");
+            case nameof(Resources.splash):
+                return subCaseFunction(nameof(Resources.splash) + ".png");
+            case nameof(Resources.splashAndroid):
+                return subCaseFunction(nameof(Resources.splashAndroid) + ".png");
+            default: throw new InvalidDataException(nameOfResource + " is an unknown Icon!");
+        }
+    }
+
     // TODO: Port to Windows
     public static void PortToWindows(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputHandlerDelegate = null)
     {
@@ -82,9 +118,9 @@ public abstract class RawMods : IMods
         
         File.Copy(utilDir + "/runner", extractDirectory + "/runner");
         if (!File.Exists(assetsDir + "/icon.png"))
-            File.Copy(utilDir + "/icon.png", assetsDir + "/icon.png");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), assetsDir + "/icon.png");
         if (!File.Exists(assetsDir + "/splash.png"))
-            File.Copy(utilDir + "/splash.png", assetsDir + "/splash.png");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), assetsDir + "/splash.png");
 
         //recursively lowercase everything in the assets folder
         HelperMethods.LowercaseFolder(assetsDir);
@@ -94,7 +130,7 @@ public abstract class RawMods : IMods
         ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
         // Clean up
-        Directory.Delete(assetsDir, true);
+        Directory.Delete(tmp, true);
     }
     
     public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
@@ -104,7 +140,6 @@ public abstract class RawMods : IMods
         
         outputHandler = outputDelegate;
         string extractDirectory = tmp + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
-        string unzipDir = extractDirectory + "/zip";
         string apkDir = extractDirectory + "/apk";
         string apkAssetsDir = apkDir + "/assets";
         string bin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "java";
@@ -160,8 +195,8 @@ public abstract class RawMods : IMods
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
         }
         
-        if (!File.Exists(apkAssetsDir + "/splash.png"))
-            File.Copy(utilDir + "/splashAndroid.png", apkAssetsDir + "/splash.png", true);
+        // The wrapper always has a splash image, so we want to overwrite it.
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splashAndroid)), apkAssetsDir + "/splash.png", true);
 
         //recursively lowercase everything in the assets folder
         HelperMethods.LowercaseFolder(apkAssetsDir);
@@ -171,10 +206,10 @@ public abstract class RawMods : IMods
         yamlFile = yamlFile.Replace("doNotCompress:", "doNotCompress:\n- ogg");
         File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
 
-        // Edit the icons in the apk
+        // Edit the icons in the apk. Wrapper always has these, so we need to overwrite these too.
         string resPath = apkDir + "/res";
-        // TODO: icon should only be read from if its there, otherwise default frog icon should be in the assembly
-        string origPath = utilDir + "/icon.png";
+        // Icon should only be read from if its there, otherwise default frog icon should be in the assembly
+        string origPath = GetProperPathToBuiltinIcons(nameof(Resources.icon));
         HelperMethods.SaveAndroidIcon(origPath, 96, resPath + "/drawable/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 72, resPath + "/drawable-hdpi-v4/icon.png");
         HelperMethods.SaveAndroidIcon(origPath, 36, resPath + "/drawable-ldpi-v4/icon.png");
@@ -273,7 +308,7 @@ public abstract class RawMods : IMods
         File.Move(finalApkBuild, outputRawApkPath);
 
         // Clean up
-        Directory.Delete(extractDirectory, true);
+        Directory.Delete(tmp, true);
     }
     
     public static void PortToMac(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
@@ -324,10 +359,11 @@ public abstract class RawMods : IMods
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
         }
 
+        // TODO: do we really want to keep their images?
         if (!File.Exists(assetsDir + "/icon.png"))
-            File.Copy(utilDir + "/icon.png", extractDirectory + "/icon.png");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon)), extractDirectory + "/icon.png");
         if (!File.Exists(assetsDir + "/splash.png"))
-            File.Copy(utilDir + "/splash.png", extractDirectory + "/splash.png");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash)), extractDirectory + "/splash.png");
         
         // Delete fonts folder if it exists, because I need to convert bytecode version from game and newer version doesn't support font loading
         if (Directory.Exists(extractDirectory + "/lang/fonts"))
@@ -379,8 +415,8 @@ public abstract class RawMods : IMods
             UndertaleData gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
             modName = gmData.GeneralInfo.DisplayName.Content;
         }
-        //TODO: handle error on special characters, but need to know which characters are invalid in the first place
-        //if (modName.Contains())
+        // Escape invalid xml characters
+        modName = SecurityElement.Escape(modName);
         SendOutput("Editing Runner references to AM2R...");
         string textFile = File.ReadAllText(assetsDir + "/yoyorunner.config");
         textFile = textFile.Replace("YoYo Runner", modName);
@@ -401,6 +437,6 @@ public abstract class RawMods : IMods
         ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
 
         // Clean up
-        Directory.Delete(baseTempDirectory, true);
+        Directory.Delete(tmp, true);
     }
 }
