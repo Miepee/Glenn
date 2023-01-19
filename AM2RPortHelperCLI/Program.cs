@@ -3,7 +3,6 @@ using System.CommandLine;
 using System.IO;
 using System.Threading.Tasks;
 using AM2RPortHelperLib;
-using Microsoft.Win32.SafeHandles;
 
 namespace AM2RPortHelper;
 
@@ -90,7 +89,7 @@ internal static class Program
         void LocalOutput(string output)
         {
             if (beVerbose)
-                Console.WriteLine(output);
+                OutputHandlerDelegate(output);
         }
 
         if (linuxPath is not null)

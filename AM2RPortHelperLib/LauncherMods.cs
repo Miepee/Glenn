@@ -2,7 +2,7 @@
 
 namespace AM2RPortHelperLib;
 
-public abstract class LauncherModsBase : ModsBase
+public abstract class LauncherMods : ModsBase
 {
     /// <summary>
     /// Ports a Mod zip intended to be installed via the AM2RLauncher to other operating systems.
