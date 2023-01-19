@@ -5,6 +5,8 @@ using System.Security;
 using System.Text.RegularExpressions;
 using SixLabors.ImageSharp;
 using UndertaleModLib;
+using UndertaleModLib.Decompiler;
+using UndertaleModLib.Models;
 using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
@@ -57,9 +59,13 @@ public abstract class RawMods : ModsBase
                 nameof(Resources.splashAndroid) + ".png" => Resources.splashAndroid,
                 _ => throw new InvalidDataException("SubCaseFunction was called with an improper resource!")
             };
-            
-            Image.Load(byteArray).SaveAsPng(TempDir + "/" + resource);
-            userIconPath = TempDir + "/" + resource;
+
+
+            string resPath = TempDir + "/" + resource;
+            if (File.Exists(resPath))
+                File.Delete(resPath);
+            Image.Load(byteArray).SaveAsPng(resPath);
+            userIconPath = resPath;
             return userIconPath;
         }
         
@@ -392,21 +398,21 @@ public abstract class RawMods : ModsBase
         switch (currentOS)
         {
             case ModOS.Windows:
-                File.Delete(assetsDir + "/AM2R.exe");
-                File.Delete(assetsDir + "/D3DX9_43.dll");
-                File.Move(assetsDir + "/data.win", assetsDir + "/game.ios");
+                File.Delete(extractDirectory + "/AM2R.exe");
+                File.Delete(extractDirectory + "/D3DX9_43.dll");
+                File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
                 break;
             case ModOS.Linux:
-                File.Delete(assetsDir + "/runner");
-                HelperMethods.DirectoryCopy(assetsDir + "/assets", assetsDir);
-                Directory.Delete(assetsDir + "/assets", true);
-                File.Move(assetsDir + "/game.unx", assetsDir + "/game.ios");
+                File.Delete(extractDirectory + "/runner");
+                HelperMethods.DirectoryCopy(extractDirectory + "/assets", extractDirectory);
+                Directory.Delete(extractDirectory + "/assets", true);
+                File.Move(extractDirectory + "/game.unx", extractDirectory + "/game.ios");
                 break;
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
         }
 
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), extractDirectory + "/icon.png");
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), extractDirectory + "/splash.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), extractDirectory + "/icon.png", true);
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), extractDirectory + "/splash.png", true);
         
         // Delete fonts folder if it exists, because I need to convert bytecode version from game and newer version doesn't support font loading
         if (Directory.Exists(extractDirectory + "/lang/fonts"))
@@ -417,47 +423,37 @@ public abstract class RawMods : ModsBase
 
         // Convert data.win to BC16 and get rid of not needed functions anymore
         SendOutput("Editing data.win to change ByteCode version and functions...");
-        string bin;
-        string args;
 
         // TODO: replace this via built-in lib
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        string modName;
+        FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
+
+        // Convert data file to ByteCode 16
         {
-            bin = "\"" + UtilDir + "/UTMTCli/UndertaleModCli.exe\"";
-            args = "";
-        }
-        else
-        {
-            // First chmod the file, just in case
-            Process.Start("chmod", "+x \"" + UtilDir + "/UTMTCli/UndertaleModCli.dll\"");
-            bin = "dotnet";
-            args = "\"" + UtilDir + "/UTMTCli/UndertaleModCli.dll\" ";
-            // Also chmod the runner. Just in case.
-            Process.Start("chmod", "+x \"" + contentsDir + "/MacOS/Mac_Runner");
+            UndertaleData gmData;
+            using (FileStream fs = datafile.OpenRead())
+            {
+                gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
+                modName = gmData.GeneralInfo.DisplayName.Content;
+
+                ChangeToByteCode16(gmData);
+            }
+
+            using (FileStream fs = new FileInfo(extractDirectory + "/game.ios").OpenWrite())
+            {
+                UndertaleIO.Write(fs, gmData, SendOutput);
+            }
         }
 
-        ProcessStartInfo pStartInfo = new ProcessStartInfo
-        {
-            FileName = bin,
-            Arguments = args + "load \"" + extractDirectory + "/game.ios\" -s \"" + UtilDir + "/bc16AndRemoveFunctions.csx\" -o \"" + extractDirectory + "/game.ios\"",
-            CreateNoWindow = false
-        };
-        Process p = new Process { StartInfo = pStartInfo };
-        p.Start();
-        p.WaitForExit();
+        // Also chmod the runner. Just in case.
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            Process.Start("chmod", "+x \"" + contentsDir + "/MacOS/Mac_Runner");
 
         // Copy assets to the place where they belong to
         SendOutput("Copy files over...");
         HelperMethods.DirectoryCopy(extractDirectory, assetsDir);
 
         // Edit config and plist to change display name
-        string modName;
-        FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
-        using (FileStream fs = datafile.OpenRead())
-        {
-            UndertaleData gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
-            modName = gmData.GeneralInfo.DisplayName.Content;
-        }
         // Escape invalid xml characters
         modName = SecurityElement.Escape(modName);
         SendOutput("Editing Runner references to AM2R...");
@@ -481,5 +477,172 @@ public abstract class RawMods : ModsBase
 
         // Clean up
         Directory.Delete(TempDir, true);
+    }
+    private static void ChangeToByteCode16(UndertaleData Data)
+    {
+        if (Data is null) return;
+        
+        string currentBytecodeVersion = Data?.GeneralInfo.BytecodeVersion.ToString();
+        string game_name = Data.GeneralInfo.Name.Content;
+
+        bool is13 = false;
+
+        void ScriptError(string s) => Console.WriteLine(s, ConsoleColor.Red);
+        void ScriptMessage(string s) => Console.WriteLine(s);
+
+        if (!(Data.FORM.Chunks.ContainsKey("AGRP")))
+        {
+            ScriptError("Bytecode 13 is not supported.");
+            return;
+        }
+        if (Data?.GeneralInfo.BytecodeVersion == 14)
+        {
+            ScriptError("Bytecode 14 is not supported.");
+            return;
+        }
+
+        if (!((Data.GMS2_3 == false) && (Data.GMS2_3_1 == false) && (Data.GMS2_3_2 == false)))
+        {
+            ScriptError(game_name + "is GMS 2.3+ and is ineligible");
+            return;
+        }
+
+        if (!(Data.FORM.Chunks.ContainsKey("AGRP")))
+        {
+            is13 = true;
+            ScriptMessage("Bytecode 13 type game detected. The upgrading of this game is experimental.");
+            currentBytecodeVersion = "13";
+        }
+
+
+        if ((Data?.GeneralInfo.BytecodeVersion == 14) || (Data?.GeneralInfo.BytecodeVersion == 15) || (is13 == true))
+        {
+            if (Data?.GeneralInfo.BytecodeVersion <= 14)
+            {
+                foreach (UndertaleCode code in Data.Code)
+                {
+                    UndertaleCodeLocals locals = new UndertaleCodeLocals();
+                    locals.Name = code.Name;
+
+                    UndertaleCodeLocals.LocalVar argsLocal = new UndertaleCodeLocals.LocalVar();
+                    argsLocal.Name = Data.Strings.MakeString("arguments");
+                    argsLocal.Index = 0;
+
+                    locals.Locals.Add(argsLocal);
+
+                    code.LocalsCount = 1;
+                    code.GenerateLocalVarDefinitions(code.FindReferencedLocalVars(), locals); // Dunno if we actually need this line, but it seems to work?
+                    Data.CodeLocals.Add(locals);
+                }
+            }
+            if (!(Data.FORM.Chunks.ContainsKey("AGRP")))
+            {
+                Data.FORM.Chunks["AGRP"] = new UndertaleChunkAGRP();
+                var previous = -1;
+                var j = 0;
+                for (var i = -1; i < Data.Sounds.Count - 1; i++)
+                {
+                    UndertaleSound sound = Data.Sounds[i + 1];
+                    bool flagCompressed = sound.Flags.HasFlag(UndertaleSound.AudioEntryFlags.IsCompressed);
+                    bool flagEmbedded = sound.Flags.HasFlag(UndertaleSound.AudioEntryFlags.IsEmbedded);
+                    if (i == -1)
+                    {
+                        if (!flagCompressed && !flagEmbedded)
+                        {
+                            sound.AudioID = -1;
+                        }
+                        else
+                        {
+                            sound.AudioID = 0;
+                            previous = 0;
+                            j = 1;
+                        }
+                    }
+                    else
+                    {
+                        if (!flagCompressed && !flagEmbedded)
+                            sound.AudioID = previous;
+                        else
+                        {
+                            sound.AudioID = j;
+                            previous = j;
+                            j++;
+                        }
+                    }
+                }
+                foreach (UndertaleSound sound in Data.Sounds)
+                {
+                    if ((sound.AudioID >= 0) && (sound.AudioID < Data.EmbeddedAudio.Count))
+                    {
+                        sound.AudioFile = Data.EmbeddedAudio[sound.AudioID];
+                    }
+                    sound.GroupID = 0;
+                }
+                Data.GeneralInfo.Build = 1804;
+                var newProductID = new byte[] { 0xBA, 0x5E, 0xBA, 0x11, 0xBA, 0xDD, 0x06, 0x60, 0xBE, 0xEF, 0xED, 0xBA, 0x0B, 0xAB, 0xBA, 0xBE };
+                Data.FORM.EXTN.productIdData.Add(newProductID);
+                Data.Options.Constants.Clear();
+                Data.Options.Constants.Add(new UndertaleOptions.Constant() { Name = Data.Strings.MakeString("@@SleepMargin"), Value = Data.Strings.MakeString(1.ToString()) });
+                Data.Options.Constants.Add(new UndertaleOptions.Constant() { Name = Data.Strings.MakeString("@@DrawColour"), Value = Data.Strings.MakeString(0xFFFFFFFF.ToString()) });
+            }
+            Data.FORM.Chunks["LANG"] = new UndertaleChunkLANG();
+            Data.FORM.LANG.Object = new UndertaleLanguage();
+            Data.FORM.Chunks["GLOB"] = new UndertaleChunkGLOB();
+            String[] order = { "GEN8", "OPTN", "LANG", "EXTN", "SOND", "AGRP", "SPRT", "BGND", "PATH", "SCPT", "GLOB", "SHDR", "FONT", "TMLN", "OBJT", "ROOM", "DAFL", "TPAG", "CODE", "VARI", "FUNC", "STRG", "TXTR", "AUDO" };
+            Dictionary<string, UndertaleChunk> newChunks = new Dictionary<string, UndertaleChunk>();
+            foreach (String name in order)
+                newChunks[name] = Data.FORM.Chunks[name];
+            Data.FORM.Chunks = newChunks;
+            Data.GeneralInfo.BytecodeVersion = 16;
+            ScriptMessage("Upgraded from " + currentBytecodeVersion + " to 16 successfully. Save the game to apply the changes.");
+            ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
+            
+            RemoveFunctions();
+        }
+        else if (Data?.GeneralInfo.BytecodeVersion == 17)
+        {
+                ScriptMessage("Cancelled.");
+                return;
+        }
+        else if (Data?.GeneralInfo.BytecodeVersion == 16)
+        {
+            ScriptMessage("This is already bytecode 16.");
+            ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
+            
+            RemoveFunctions();
+            
+            return;
+        }
+        else
+        {
+            string error = @"This game is not bytecode 13, 
+        14, 15, 16, or 17, and is not made in GameMaker 2.3
+        or greater. Please report this game to Grossley#2869
+        on Discord and provide the name of the game, where
+        you obtained it from, and additionally send the
+        data.win file of the game." + @"
+
+        Current status of game '" + game_name + @"':
+        GMS 2.3 == " + Data.GMS2_3 + @"
+        GMS 2.3.1 == " + Data.GMS2_3_1 + @"
+        GMS 2.3.2 == " + Data.GMS2_3_2 + @"
+        Bytecode == " + (Data?.GeneralInfo.BytecodeVersion);
+            ScriptError(error);
+            return;
+        }
+
+        void RemoveFunctions()
+        {
+            List<UndertaleFunction> funcsToRemove = new List<UndertaleFunction>();
+            
+            foreach (UndertaleFunction func in Data.Functions)
+            {   
+                if (func.ToString() == "immersion_play_effect" || func.ToString() == "immersion_stop" || func.ToString() == "font_replace")
+                    funcsToRemove.Add(func);
+            }
+            
+            foreach (var func in funcsToRemove)
+                Data.Functions.Remove(func);    
+        }
     }
 }

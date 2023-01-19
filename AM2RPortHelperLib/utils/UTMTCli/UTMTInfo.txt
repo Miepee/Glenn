@@ -1,3 +1,0 @@
-UTMTCLI version was taken from commit "ba31a5d16eab8b0a84899064fd97f8d0648dfdd8" (tag "v0.4.0.2")
-
-UndertaleModTool (https://github.com/krzys-h/UndertaleModTool) is licensed under GPLv3 just like this project.

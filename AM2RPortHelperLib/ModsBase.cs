@@ -11,6 +11,13 @@ public abstract class ModsBase
         OutputHandler?.Invoke(output);
     }
 
+    // Create before accessing anything
+    static ModsBase()
+    {
+        Directory.CreateDirectory(TempDir);
+        Directory.CreateDirectory(UtilDir);
+    }
+
     /// <summary>
     /// A temporary directory
     /// </summary>
