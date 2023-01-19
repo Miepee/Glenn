@@ -34,7 +34,7 @@ public partial class MainForm : Form
         Title = $"AM2RPortHelper - v{Core.Version}";
         MinimumSize = new Size(260, 280);
         
-        var mainLayout = new DynamicLayout();
+        var mainLayout = new DynamicLayout() {Padding = 10};
         mainLayout.BeginVertical();
         mainLayout.AddRange(labelSelectMod,
                             new Label { Height = 5 },
