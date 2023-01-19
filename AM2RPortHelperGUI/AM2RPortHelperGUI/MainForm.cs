@@ -10,6 +10,8 @@ using Eto.Drawing;
 namespace AM2RPortHelperGUI;
 
 public partial class MainForm : Form
+
+// TODO: clean GUI
 {
     private readonly string userIconPath = Core.ConfigDir + "/icon.png";
     private readonly string userSplashPath = Core.ConfigDir + "/splash.png";
@@ -114,6 +116,8 @@ public partial class MainForm : Form
         buttonEditIcon.Click += ButtonEditIconClick;
         buttonEditSplash.Click += ButtonEditSplashClick;
     }
+    
+    // TODO: condense these
     private void ButtonEditSplashClick(object sender, EventArgs e)
     {
         var dialog = new OpenFileDialog();

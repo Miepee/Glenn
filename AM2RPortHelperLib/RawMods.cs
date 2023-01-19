@@ -11,6 +11,8 @@ using static AM2RPortHelperLib.Core;
 
 namespace AM2RPortHelperLib;
 
+// TODO: rebrand
+
 public abstract class RawMods : ModsBase
 {
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
@@ -39,18 +41,18 @@ public abstract class RawMods : ModsBase
     }
 
     /// <summary>
-    /// 
+    /// Gets the file path of a PNG resource, either from the embedded assembly, or from an overwrite in a specific path.
     /// </summary>
-    /// <param name="nameOfResource"></param>
-    /// <param name="userIconPath"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidDataException"></exception>
-    public static string GetProperPathToBuiltinIcons(string nameOfResource, string userIconPath)
+    /// <param name="nameOfResource">The name of a resource, without any extension.</param>
+    /// <param name="userResourcePath">A custom resource path, that should be used instead if it exists.</param>
+    /// <returns>If <paramref name="userResourcePath"/>exists, it will return that, otherwise an accessible file path to the resource.</returns>
+    /// <exception cref="InvalidDataException"><paramref name="nameOfResource"/> does not exist as an embedded resource.</exception>
+    public static string GetProperPathToBuiltinIcons(string nameOfResource, string userResourcePath)
     {
         string SubCaseFunction(string resource)
         {
-            if (File.Exists(userIconPath))
-                return userIconPath;
+            if (File.Exists(userResourcePath))
+                return userResourcePath;
 
             var byteArray = resource switch
             {
@@ -65,8 +67,8 @@ public abstract class RawMods : ModsBase
             if (File.Exists(resPath))
                 File.Delete(resPath);
             Image.Load(byteArray).SaveAsPng(resPath);
-            userIconPath = resPath;
-            return userIconPath;
+            userResourcePath = resPath;
+            return userResourcePath;
         }
         
         switch (nameOfResource)
@@ -423,8 +425,7 @@ public abstract class RawMods : ModsBase
 
         // Convert data.win to BC16 and get rid of not needed functions anymore
         SendOutput("Editing data.win to change ByteCode version and functions...");
-
-        // TODO: replace this via built-in lib
+        
         string modName;
         FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
 
@@ -478,6 +479,8 @@ public abstract class RawMods : ModsBase
         // Clean up
         Directory.Delete(TempDir, true);
     }
+    
+    // TODO: clean this
     private static void ChangeToByteCode16(UndertaleData Data)
     {
         if (Data is null) return;
@@ -485,12 +488,10 @@ public abstract class RawMods : ModsBase
         string currentBytecodeVersion = Data?.GeneralInfo.BytecodeVersion.ToString();
         string game_name = Data.GeneralInfo.Name.Content;
 
-        bool is13 = false;
-
         void ScriptError(string s) => Console.WriteLine(s, ConsoleColor.Red);
         void ScriptMessage(string s) => Console.WriteLine(s);
 
-        if (!(Data.FORM.Chunks.ContainsKey("AGRP")))
+        if (!Data.FORM.Chunks.ContainsKey("AGRP"))
         {
             ScriptError("Bytecode 13 is not supported.");
             return;
@@ -506,16 +507,8 @@ public abstract class RawMods : ModsBase
             ScriptError(game_name + "is GMS 2.3+ and is ineligible");
             return;
         }
-
-        if (!(Data.FORM.Chunks.ContainsKey("AGRP")))
-        {
-            is13 = true;
-            ScriptMessage("Bytecode 13 type game detected. The upgrading of this game is experimental.");
-            currentBytecodeVersion = "13";
-        }
-
-
-        if ((Data?.GeneralInfo.BytecodeVersion == 14) || (Data?.GeneralInfo.BytecodeVersion == 15) || (is13 == true))
+        
+        if ((Data?.GeneralInfo.BytecodeVersion == 14) || (Data?.GeneralInfo.BytecodeVersion == 15))
         {
             if (Data?.GeneralInfo.BytecodeVersion <= 14)
             {
