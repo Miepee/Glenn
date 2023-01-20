@@ -152,35 +152,42 @@ public partial class MainForm : Form
 
         string iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), userIconPath);
         string splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), userSplashPath);
-        
-        if (checkboxLinux.Checked.Value)
-        {
-            if (File.Exists(linuxPath))
-                File.Delete(linuxPath);
-            
-            await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, iconPath, splashPath, OutputHandlerDelegate));
-        }
-        if (checkboxAndroid.Checked.Value)
-        {
-            if (File.Exists(androidPath))
-                File.Delete(androidPath);
 
-            bool useCustomSave = checkboxUseCustomSave.Checked.Value;
-            bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
-            await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, iconPath, splashPath, useCustomSave, useInternet, OutputHandlerDelegate));
-        }
-        if (checkboxMac.Checked.Value)
+        try
         {
-            if (File.Exists(macPath))
-                File.Delete(macPath);
-            
-            string modName = checkboxUseCustomSave.Text;
-            await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, iconPath, splashPath, OutputHandlerDelegate));
+            if (checkboxLinux.Checked.Value)
+            {
+                if (File.Exists(linuxPath))
+                    File.Delete(linuxPath);
+
+                await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, iconPath, splashPath, OutputHandlerDelegate));
+            }
+            if (checkboxAndroid.Checked.Value)
+            {
+                if (File.Exists(androidPath))
+                    File.Delete(androidPath);
+
+                bool useCustomSave = checkboxUseCustomSave.Checked.Value;
+                bool useInternet = checkboxAndroidRequiresInternet.Checked.Value;
+                await Task.Run(() => RawMods.PortToAndroid(modZipPath, androidPath, iconPath, splashPath, useCustomSave, useInternet, OutputHandlerDelegate));
+            }
+            if (checkboxMac.Checked.Value)
+            {
+                if (File.Exists(macPath))
+                    File.Delete(macPath);
+                
+                await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, iconPath, splashPath, OutputHandlerDelegate));
+            }
+
+            labelProgress.Text = "Done!";
+            OpenFolder(currentDir);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, "Stack Trace: " + exception, "Error", MessageBoxType.Error);
+            throw;
         }
 
-        labelProgress.Text = "Done!";
-        OpenFolder(currentDir);
-        
         SetDisableStatusOfAllElements(false);
     }
     
