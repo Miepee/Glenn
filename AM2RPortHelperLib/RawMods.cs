@@ -27,7 +27,9 @@ public abstract class RawMods : ModsBase
     public static ModOS GetModOSOfRawZip(string inputRawZipPath)
     {
         ZipArchive archive = ZipFile.OpenRead(inputRawZipPath);
-        if (archive.Entries.Any(f => f.FullName == "AM2R.exe") && archive.Entries.Any(f => f.FullName == "data.win"))
+        // Since exe's can be differently named, we'll search for exactly one exe in no subdirectories.
+        var exeList = archive.Entries.Where(f => f.FullName.EndsWith(".exe")).ToList();
+        if (exeList.Count == 1 && !exeList[0].FullName.Contains('/') && archive.Entries.Any(f => f.FullName == "data.win"))
             return ModOS.Windows;
         
         if (archive.Entries.Any(f => f.FullName == "runner") && archive.Entries.Any(f => f.FullName == "assets/game.unx"))
@@ -129,7 +131,8 @@ public abstract class RawMods : ModsBase
         switch (currentOS)
         {
             case ModOS.Windows:
-                File.Delete(assetsDir + "/AM2R.exe");
+                var exeFile = new DirectoryInfo(assetsDir).GetFiles().First(f => f.Name.EndsWith(".exe"));
+                exeFile.Delete();
                 File.Delete(assetsDir + "/D3DX9_43.dll");
                 File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
                 break;
@@ -215,7 +218,8 @@ public abstract class RawMods : ModsBase
         switch (currentOS)
         {
             case ModOS.Windows:
-                File.Delete(apkAssetsDir + "/AM2R.exe");
+                var exeFile = new DirectoryInfo(apkAssetsDir).GetFiles().First(f => f.Name.EndsWith(".exe"));
+                exeFile.Delete();
                 File.Delete(apkAssetsDir + "/D3DX9_43.dll");
                 File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
                 break;
@@ -406,7 +410,8 @@ public abstract class RawMods : ModsBase
         switch (currentOS)
         {
             case ModOS.Windows:
-                File.Delete(extractDirectory + "/AM2R.exe");
+                var exeFile = new DirectoryInfo(extractDirectory).GetFiles().First(f => f.Name.EndsWith(".exe"));
+                exeFile.Delete();
                 File.Delete(extractDirectory + "/D3DX9_43.dll");
                 File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
                 break;
