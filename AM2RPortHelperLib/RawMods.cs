@@ -244,10 +244,12 @@ public abstract class RawMods : ModsBase
         HelperMethods.LowercaseFolder(apkAssetsDir);
 
         // Edit apktool.yml to not compress music
+        SendOutput("Edit settings file to not compress OGGs...");
         string yamlFile = File.ReadAllText(apkDir + "/apktool.yml");
         yamlFile = yamlFile.Replace("doNotCompress:", "doNotCompress:\n- ogg");
         File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
-
+        
+        SendOutput("Save new icons");
         // Edit the icons in the apk. Wrapper always has these, so we need to overwrite these too.
         string resPath = apkDir + "/res";
         // Icon should only be read from if its there, otherwise default frog icon should be in the assembly
@@ -268,8 +270,9 @@ public abstract class RawMods : ModsBase
             // If a custom name was given, replace it everywhere.
             if (useCustomSaveDirectory)
             {
+                SendOutput("Get display name...");
                 string modName;
-                FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
+                FileInfo datafile = new FileInfo(apkAssetsDir + "/game.droid");
                 using (FileStream fs = datafile.OpenRead())
                 {
                     UndertaleData gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
@@ -281,6 +284,8 @@ public abstract class RawMods : ModsBase
                 Regex nameReg = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*$");
                 if (!nameReg.Match(modName).Success)
                     throw new InvalidDataException("The display name " + modName + " is invalid! The name has to start with letters (a-z), and can only contain letters, digits, space, colon and underscore!");
+                
+                SendOutput("Replace Android save directory...");
                 
                 // first in the manifest
                 manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
@@ -315,6 +320,7 @@ public abstract class RawMods : ModsBase
             // Add internet permission, keying off the Bluetooth permission.
             if (usesInternet)
             {
+                SendOutput("Replace Internet permission...");
                 const string bluetoothPermission = "<uses-permission android:name=\"android.permission.BLUETOOTH\"/>";
                 const string internetPermission = "<uses-permission android:name=\"android.permission.INTERNET\"/>";
                 manifestFile = manifestFile.Replace(bluetoothPermission, internetPermission + "\n    " + bluetoothPermission);
