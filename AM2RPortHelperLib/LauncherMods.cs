@@ -15,16 +15,16 @@ public abstract class LauncherMods : ModsBase
     /// <param name="outputDelegate">The function that should handle in-progress output messages.</param>
     /// <exception cref="NotSupportedException">WIP</exception>
     /// TODO: other exceptions
-    public static void PortLauncherMod(string inputLauncherZipPath, Core.ModOS modTarget, bool includeAndroid, string outputLauncherZipPath, string am2r11ZipPath = null, OutputHandlerDelegate outputDelegate = null)
+    public static void PortLauncherMod(string inputLauncherZipPath, Core.ModOS modTarget, bool includeAndroid, string outputLauncherZipPath, string am2r11ZipPath = null,
+                                       OutputHandlerDelegate outputDelegate = null)
     {
-        OutputHandler = outputDelegate;  
         string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputLauncherZipPath);
         string filesToCopyDir = extractDirectory + "/files_to_copy";
         
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
-        SendOutput("Extracting Launcher mod...");
+        outputDelegate.SendOutput("Extracting Launcher mod...");
         ZipFile.ExtractToDirectory(inputLauncherZipPath, extractDirectory);
 
         var profile = Serializer.Deserialize<ProfileXML>(File.ReadAllText(extractDirectory + "/profile.xml"));
@@ -36,7 +36,7 @@ public abstract class LauncherMods : ModsBase
 
         if (modTarget.ToString() == profile.OperatingSystem)
         {
-            SendOutput("Target OS and Launcher OS are the same; exiting.");
+            outputDelegate.SendOutput("Target OS and Launcher OS are the same; exiting.");
             return;
         }
 
@@ -143,7 +143,7 @@ public abstract class LauncherMods : ModsBase
         }
         
         //zip the result
-        SendOutput($"Creating Launcher zip for {modTarget}...");
+        outputDelegate.SendOutput($"Creating Launcher zip for {modTarget}...");
         ZipFile.CreateFromDirectory(extractDirectory, outputLauncherZipPath);
 
         // Clean up

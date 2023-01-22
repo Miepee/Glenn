@@ -47,7 +47,7 @@ public partial class MainForm : Form
         mainLayout.AddRow(labelOSHeader);
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
-        mainLayout.AddRow(checkboxLinux, checkboxAndroid, checkboxMac);
+        mainLayout.AddRow(checkboxWindows, checkboxLinux, checkboxAndroid, checkboxMac);
         mainLayout.AddSpace();
         mainLayout.EndCentered();
         mainLayout.BeginCentered();
@@ -146,6 +146,7 @@ public partial class MainForm : Form
         void OutputHandlerDelegate(string output) => Application.Instance.Invoke(() => labelProgress.Text = $"Info: {output}");
         string modZipPath = filePicker.FilePath;
         string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+        string windowsPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_WINDOWS.zip"; 
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
         string macPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_MACOS.zip";
@@ -155,6 +156,13 @@ public partial class MainForm : Form
 
         try
         {
+            if (checkboxWindows.Checked.Value)
+            {
+                if (File.Exists(windowsPath))
+                    File.Delete(windowsPath);
+
+                await Task.Run(() => RawMods.PortToWindows(modZipPath, windowsPath, OutputHandlerDelegate));
+            }
             if (checkboxLinux.Checked.Value)
             {
                 if (File.Exists(linuxPath))
@@ -205,7 +213,7 @@ public partial class MainForm : Form
     {
         // there needs to be a selected mod + any checkbox
         if (!String.IsNullOrWhiteSpace(filePicker.FilePath) && 
-            (checkboxAndroid.Checked.Value || checkboxLinux.Checked.Value || checkboxMac.Checked.Value))
+            (checkboxWindows.Checked.Value || checkboxLinux.Checked.Value || checkboxAndroid.Checked.Value || checkboxMac.Checked.Value))
             buttonPort.Enabled = true;
         else
             buttonPort.Enabled = false;
@@ -241,6 +249,10 @@ public partial class MainForm : Form
     {
         Text = "Choose the OS to port to",
         Font = new Font(SystemFont.Bold)
+    };
+    private readonly CheckBox checkboxWindows = new CheckBox
+    {
+        Text = "Windows"
     };
     private readonly CheckBox checkboxLinux = new CheckBox
     {

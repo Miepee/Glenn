@@ -20,6 +20,7 @@ internal static class Program
         
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
+        var windowsOption = new Option<FileInfo>(new[] { "-w", "--windows" }, "The output file path for the Windows mod. None given equals to no Windows port.");
         var linuxOption = new Option<FileInfo>(new[] { "-l", "--linux" }, "The output file path for the Linux mod. None given equals to no Linux port.");
         var androidOption = new Option<FileInfo>(new[] { "-a", "--android" }, "The output file path for the Android mod. None given equals to no Android port.");
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
@@ -32,13 +33,14 @@ internal static class Program
         // TODO: double check whether its not possible to have the same splash screen for both desktop and mobile
         var customSaveOption = new Option<bool>(new[] { "-s", "--customsave" }, "Whether the Android Port should use a custom save location. Has no effect on other OS.");
         
-        var internetOption = new Option<bool>(new[] { "-w", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect on other OS.");
+        var internetOption = new Option<bool>(new[] { "-n", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect on other OS.");
         var verboseOption = new Option<bool>(new[] { "-v", "--verbose" }, "Whether to show verbose output.");
 
         RootCommand rootCommand = new RootCommand("A utility to port Windows AM2R Mods to other operating systems.")
         {
             interactiveOption,
             fileOption,
+            windowsOption,
             linuxOption,
             androidOption,
             macOption,
@@ -52,6 +54,7 @@ internal static class Program
         {
             bool interactive = context.ParseResult.GetValueForOption(interactiveOption);
             FileInfo inputModPath = context.ParseResult.GetValueForOption(fileOption);
+            FileInfo windowsPath = context.ParseResult.GetValueForOption(windowsOption);
             FileInfo linuxPath = context.ParseResult.GetValueForOption(linuxOption);
             FileInfo androidPath = context.ParseResult.GetValueForOption(androidOption);
             FileInfo macPath = context.ParseResult.GetValueForOption(macOption);
@@ -61,13 +64,13 @@ internal static class Program
             bool beVerbose = context.ParseResult.GetValueForOption(verboseOption);
             FileInfo iconPath = context.ParseResult.GetValueForOption(iconOption);
 
-            return RootMethod(interactive, inputModPath, linuxPath, androidPath, macPath, splashPath, iconPath, useCustomSave, usesInternet, beVerbose);
+            return RootMethod(interactive, inputModPath, windowsPath, linuxPath, androidPath, macPath, splashPath, iconPath, useCustomSave, usesInternet, beVerbose);
         });
         
         return rootCommand.InvokeAsync(args).Result;
     }
 #pragma warning disable CS1998
-    private static async Task<int> RootMethod(bool interactive, FileInfo inputModPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath,
+    private static async Task<int> RootMethod(bool interactive, FileInfo inputModPath, FileInfo windowsPath, FileInfo linuxPath, FileInfo androidPath, FileInfo macPath,
                                               FileInfo iconPath, FileInfo splashPath, bool useCustomSave, bool usesInternet, bool beVerbose)
 #pragma warning restore CS1998
     {
@@ -92,6 +95,10 @@ internal static class Program
                 OutputHandlerDelegate(output);
         }
 
+        if (windowsPath is not null)
+        {
+            RawMods.PortToWindows(inputModPath.FullName, windowsPath.FullName, LocalOutput);
+        }
         if (linuxPath is not null)
         {
             RawMods.PortToLinux(inputModPath.FullName, linuxPath.FullName, iconPath?.FullName, splashPath?.FullName, LocalOutput);

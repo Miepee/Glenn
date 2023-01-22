@@ -85,10 +85,64 @@ public abstract class RawMods : ModsBase
         }
     }
 
-    // TODO: Port to Windows
-    public static void PortToWindows(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputHandlerDelegate = null)
+    /// <summary>
+    /// Ports a raw AM2R mod zip for Linux. 
+    /// </summary>
+    /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
+    /// <param name="outputRawZipPath">The path where the ported Windows mod zip should be saved to.</param>
+    /// <param name="outputDelegate">A delegate to post output info to.</param>
+    /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
+    public static void PortToWindows(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
+        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        outputDelegate.SendOutput("Zip Recognized as " + currentOS);
+
+        if (currentOS == ModOS.Windows)
+        {
+            outputDelegate.SendOutput("Zip is already a raw Windows zip. Copying to output directory...");
+            File.Copy(inputRawZipPath, outputRawZipPath, true);
+            return;
+        }
         
+        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+
+        // Check if temp folder exists, delete if yes, extract zip to there
+        if (Directory.Exists(extractDirectory))
+            Directory.Delete(extractDirectory, true);
+        outputDelegate.SendOutput("Extracting for Raw Windows...");
+        Directory.CreateDirectory(extractDirectory);
+        ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
+        
+        // Delete unnecessary files, rename data.win, move in the new runner
+        outputDelegate.SendOutput("Delete unnecessary files for Windows...");
+        switch (currentOS)
+        {
+            case ModOS.Linux:
+                File.Delete(extractDirectory + "/runner");
+                HelperMethods.DirectoryCopy(extractDirectory + "/assets", extractDirectory);
+                Directory.Delete(extractDirectory + "/assets", true);
+                File.Move(extractDirectory + "/game.unx", extractDirectory + "/data.win");
+                break;
+            case ModOS.Mac:
+                var appDir = new DirectoryInfo(extractDirectory).GetDirectories().First(n => n.Name.EndsWith(".app"));
+                HelperMethods.DirectoryCopy(extractDirectory + "/" + appDir.Name + "/Contents/Resources", extractDirectory);
+                File.Delete(extractDirectory + "/gamecontrollerdb.txt");
+                File.Delete(extractDirectory + "/yoyorunner.config");
+                Directory.Delete(extractDirectory + "/English.lproj", true);
+                Directory.Delete(extractDirectory + "/" + appDir.Name, true);
+                File.Move(extractDirectory + "/game.ios", extractDirectory + "/data.win");
+                break;
+            default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported.");
+        }
+        
+        File.Copy(UtilDir + "/executable.exe", extractDirectory + "/AM2R.exe");
+
+        //zip the result
+        outputDelegate.SendOutput("Creating raw Windows zip...");
+        ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
+
+        // Clean up
+        Directory.Delete(TempDir, true);
     }
 
     /// <summary>
@@ -106,28 +160,27 @@ public abstract class RawMods : ModsBase
                                    OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
-        SendOutput("Zip Recognized as " + currentOS);
+        outputDelegate.SendOutput("Zip Recognized as " + currentOS);
 
         if (currentOS == ModOS.Linux)
         {
-            SendOutput("Zip is already a raw Linux zip. Copying to output directory...");
+            outputDelegate.SendOutput("Zip is already a raw Linux zip. Copying to output directory...");
             File.Copy(inputRawZipPath, outputRawZipPath, true);
             return;
         }
 
-        OutputHandler = outputDelegate;
         string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string assetsDir = extractDirectory + "/assets";
 
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
-        SendOutput("Extracting for Raw Linux...");
+        outputDelegate.SendOutput("Extracting for Raw Linux...");
         Directory.CreateDirectory(assetsDir);
         ZipFile.ExtractToDirectory(inputRawZipPath, assetsDir);
         
         // Delete unnecessary files, rename data.win, move in the new runner
-        SendOutput("Delete unnecessary files for Linux and lowercase them...");
+        outputDelegate.SendOutput("Delete unnecessary files for Linux...");
         switch (currentOS)
         {
             case ModOS.Windows:
@@ -153,10 +206,11 @@ public abstract class RawMods : ModsBase
         File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png");
 
         //recursively lowercase everything in the assets folder
+        outputDelegate.SendOutput("Lowercase everything in the assets folder...");
         HelperMethods.LowercaseFolder(assetsDir);
 
         //zip the result
-        SendOutput("Creating raw Linux zip...");
+        outputDelegate.SendOutput("Creating raw Linux zip...");
         ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
 
         // Clean up
@@ -181,9 +235,8 @@ public abstract class RawMods : ModsBase
                                      bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
-        SendOutput("Zip Recognized as " + currentOS);
+        outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
-        OutputHandler = outputDelegate;
         string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string apkDir = extractDirectory + "/apk";
         string apkAssetsDir = apkDir + "/assets";
@@ -199,7 +252,7 @@ public abstract class RawMods : ModsBase
         Directory.CreateDirectory(extractDirectory);
 
         // Run APKTOOL and decompress the file
-        SendOutput("Decompiling apk...");
+        outputDelegate.SendOutput("Decompiling apk...");
         ProcessStartInfo pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
@@ -210,11 +263,11 @@ public abstract class RawMods : ModsBase
         p.Start();
         p.WaitForExit();
         
-        SendOutput("Extracting for Raw Android...");
+        outputDelegate.SendOutput("Extracting for Raw Android...");
         ZipFile.ExtractToDirectory(inputRawZipPath, apkAssetsDir);
         
         // Delete unnecessary files, rename data.win, move in the new runner
-        SendOutput("Delete unnecessary files for Android and lowercase them...");
+        outputDelegate.SendOutput("Delete unnecessary files for Android...");
         switch (currentOS)
         {
             case ModOS.Windows:
@@ -245,15 +298,16 @@ public abstract class RawMods : ModsBase
         File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splashAndroid), pathToSplashScreen), apkAssetsDir + "/splash.png", true);
 
         //recursively lowercase everything in the assets folder
+        outputDelegate.SendOutput("Lowercase everything in the assets folder...");
         HelperMethods.LowercaseFolder(apkAssetsDir);
 
         // Edit apktool.yml to not compress music
-        SendOutput("Edit settings file to not compress OGGs...");
+        outputDelegate.SendOutput("Edit settings file to not compress OGGs...");
         string yamlFile = File.ReadAllText(apkDir + "/apktool.yml");
         yamlFile = yamlFile.Replace("doNotCompress:", "doNotCompress:\n- ogg");
         File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
         
-        SendOutput("Save new icons");
+        outputDelegate.SendOutput("Save new icons");
         // Edit the icons in the apk. Wrapper always has these, so we need to overwrite these too.
         string resPath = apkDir + "/res";
         // Icon should only be read from if its there, otherwise default frog icon should be in the assembly
@@ -274,12 +328,12 @@ public abstract class RawMods : ModsBase
             // If a custom name was given, replace it everywhere.
             if (useCustomSaveDirectory)
             {
-                SendOutput("Get display name...");
+                outputDelegate.SendOutput("Get display name...");
                 string modName;
                 FileInfo datafile = new FileInfo(apkAssetsDir + "/game.droid");
                 using (FileStream fs = datafile.OpenRead())
                 {
-                    UndertaleData gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
+                    UndertaleData gmData = UndertaleIO.Read(fs, outputDelegate.SendOutput, outputDelegate.SendOutput);
                     modName = gmData.GeneralInfo.DisplayName.Content;
                 }
                 modName = modName.Replace(" ", "").Replace(":", "");
@@ -289,7 +343,7 @@ public abstract class RawMods : ModsBase
                 if (!nameReg.Match(modName).Success)
                     throw new InvalidDataException("The display name " + modName + " is invalid! The name has to start with letters (a-z), and can only contain letters, digits, space, colon and underscore!");
                 
-                SendOutput("Replace Android save directory...");
+                outputDelegate.SendOutput("Replace Android save directory...");
                 
                 // first in the manifest
                 manifestFile = manifestFile.Replace("com.companyname.AM2RWrapper", $"com.companyname.{modName}");
@@ -324,7 +378,7 @@ public abstract class RawMods : ModsBase
             // Add internet permission, keying off the Bluetooth permission.
             if (usesInternet)
             {
-                SendOutput("Replace Internet permission...");
+                outputDelegate.SendOutput("Replace Internet permission...");
                 const string bluetoothPermission = "<uses-permission android:name=\"android.permission.BLUETOOTH\"/>";
                 const string internetPermission = "<uses-permission android:name=\"android.permission.INTERNET\"/>";
                 manifestFile = manifestFile.Replace(bluetoothPermission, internetPermission + "\n    " + bluetoothPermission);
@@ -333,7 +387,7 @@ public abstract class RawMods : ModsBase
         }
 
         // Run APKTOOL and build the apk
-        SendOutput("Rebuild apk...");
+        outputDelegate.SendOutput("Rebuild apk...");
         pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
@@ -345,7 +399,7 @@ public abstract class RawMods : ModsBase
         p.WaitForExit();
 
         // Sign the apk
-        SendOutput("Sign apk...");
+        outputDelegate.SendOutput("Sign apk...");
         pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
@@ -378,16 +432,15 @@ public abstract class RawMods : ModsBase
                                  OutputHandlerDelegate outputDelegate = null)
     {
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
-        SendOutput("Zip Recognized as " + currentOS);
+        outputDelegate.SendOutput("Zip Recognized as " + currentOS);
 
         if (currentOS == ModOS.Mac)
         {
-            SendOutput("Zip is already a raw Mac zip. Copying to output dir...");
+            outputDelegate.SendOutput("Zip is already a raw Mac zip. Copying to output dir...");
             File.Copy(inputRawZipPath, outputRawZipPath, true);
             return;
         }
         
-        OutputHandler = outputDelegate;
         string baseTempDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string extractDirectory = baseTempDirectory + "/extract";
         string appDirectory = baseTempDirectory + "/AM2R.app";
@@ -397,16 +450,16 @@ public abstract class RawMods : ModsBase
         // Check if temp folder exists, delete if yes, copy bare runner to there
         if (Directory.Exists(baseTempDirectory))
             Directory.Delete(baseTempDirectory, true);
-        SendOutput("Copying Mac Runner...");
+        outputDelegate.SendOutput("Copying Mac Runner...");
         Directory.CreateDirectory(contentsDir);
         HelperMethods.DirectoryCopy(UtilDir + "/Contents", contentsDir);
 
         // Extract mod to temp location
-        SendOutput("Extracting Mac...");
+        outputDelegate.SendOutput("Extracting Mac...");
         ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Delete unnecessary files, rename data.win, move in the new runner
-        SendOutput("Delete unnecessary files for Mac and lowercase them...");
+        outputDelegate.SendOutput("Delete unnecessary files for Mac...");
         switch (currentOS)
         {
             case ModOS.Windows:
@@ -432,10 +485,11 @@ public abstract class RawMods : ModsBase
             Directory.Delete(extractDirectory + "/lang/fonts", true);
 
         // Lowercase every file first
+        outputDelegate.SendOutput("Lowercase everything in the assets folder...");
         HelperMethods.LowercaseFolder(extractDirectory);
 
         // Convert data.win to BC16 and get rid of not needed functions anymore
-        SendOutput("Editing data.win to change ByteCode version and functions...");
+        outputDelegate.SendOutput("Editing data.win to change ByteCode version and functions...");
         
         string modName;
         FileInfo datafile = new FileInfo(extractDirectory + "/game.ios");
@@ -445,15 +499,15 @@ public abstract class RawMods : ModsBase
             UndertaleData gmData;
             using (FileStream fs = datafile.OpenRead())
             {
-                gmData = UndertaleIO.Read(fs, SendOutput, SendOutput);
+                gmData = UndertaleIO.Read(fs, outputDelegate.SendOutput, outputDelegate.SendOutput);
                 modName = gmData.GeneralInfo.DisplayName.Content;
 
-                ChangeToByteCode16(gmData);
+                ChangeToByteCode16(gmData, outputDelegate.SendOutput);
             }
 
             using (FileStream fs = new FileInfo(extractDirectory + "/game.ios").OpenWrite())
             {
-                UndertaleIO.Write(fs, gmData, SendOutput);
+                UndertaleIO.Write(fs, gmData, outputDelegate.SendOutput);
             }
         }
 
@@ -462,13 +516,13 @@ public abstract class RawMods : ModsBase
             Process.Start("chmod", "+x \"" + contentsDir + "/MacOS/Mac_Runner");
 
         // Copy assets to the place where they belong to
-        SendOutput("Copy files over...");
+        outputDelegate.SendOutput("Copy files over...");
         HelperMethods.DirectoryCopy(extractDirectory, assetsDir);
 
         // Edit config and plist to change display name
         // Escape invalid xml characters
         modName = SecurityElement.Escape(modName);
-        SendOutput("Editing Runner references to AM2R...");
+        outputDelegate.SendOutput("Editing Runner references to AM2R...");
         string textFile = File.ReadAllText(assetsDir + "/yoyorunner.config");
         textFile = textFile.Replace("YoYo Runner", modName);
         File.WriteAllText(assetsDir + "/yoyorunner.config", textFile);
@@ -484,44 +538,55 @@ public abstract class RawMods : ModsBase
         Directory.Delete(extractDirectory, true);
 
         //zip the result
-        SendOutput("Creating Mac zip...");
+        outputDelegate.SendOutput("Creating Mac zip...");
         ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
 
         // Clean up
         Directory.Delete(TempDir, true);
     }
     
-    // TODO: clean this
-    private static void ChangeToByteCode16(UndertaleData Data)
+    /// <summary>
+    /// Converts a GameMaker data file to bytecode version 16
+    /// </summary>
+    /// <param name="Data">The GameMaker data file.</param>
+    /// <param name="output">Delegate on where to send output messages to.</param>
+    /// <exception cref="NotSupportedException"><paramref name="Data"/> has a not supported Bytecode version.</exception>
+    private static void ChangeToByteCode16(UndertaleData Data, OutputHandlerDelegate output)
     {
         if (Data is null) return;
         
-        string currentBytecodeVersion = Data?.GeneralInfo.BytecodeVersion.ToString();
         string game_name = Data.GeneralInfo.Name.Content;
 
-        void ScriptError(string s) => Console.WriteLine(s, ConsoleColor.Red);
-        void ScriptMessage(string s) => Console.WriteLine(s);
-
+        void ScriptMessage(string s) => output(s);
+        
         if (!Data.FORM.Chunks.ContainsKey("AGRP"))
         {
-            ScriptError("Bytecode 13 is not supported.");
-            return;
+            throw new NotSupportedException("Bytecode 13 is not supported.");
         }
-        if (Data?.GeneralInfo.BytecodeVersion == 14)
+        byte? bcVersion = Data?.GeneralInfo.BytecodeVersion;
+        if (bcVersion == 14)
         {
-            ScriptError("Bytecode 14 is not supported.");
-            return;
+            throw new NotSupportedException("Bytecode 14 is not supported.");
         }
-
+        if (bcVersion == 17)
+        {
+            throw new NotSupportedException("Bytecode 17 is not supported.");
+        }
         if (!((Data.GMS2_3 == false) && (Data.GMS2_3_1 == false) && (Data.GMS2_3_2 == false)))
         {
-            ScriptError(game_name + "is GMS 2.3+ and is ineligible");
-            return;
+            throw new NotSupportedException(game_name + "is GMS 2.3+ and is ineligible");
         }
-        
-        if ((Data?.GeneralInfo.BytecodeVersion == 14) || (Data?.GeneralInfo.BytecodeVersion == 15))
+
+        if (bcVersion != 14 && bcVersion != 15 && bcVersion != 16)
         {
-            if (Data?.GeneralInfo.BytecodeVersion <= 14)
+            throw new NotSupportedException("Unknown Bytecode version!");
+        }
+            
+        
+        if ((bcVersion == 14) || (bcVersion == 15))
+        {
+            // For BC 14
+            if (bcVersion <= 14)
             {
                 foreach (UndertaleCode code in Data.Code)
                 {
@@ -539,7 +604,8 @@ public abstract class RawMods : ModsBase
                     Data.CodeLocals.Add(locals);
                 }
             }
-            if (!(Data.FORM.Chunks.ContainsKey("AGRP")))
+            // For BC 13
+            if (!Data.FORM.Chunks.ContainsKey("AGRP"))
             {
                 Data.FORM.Chunks["AGRP"] = new UndertaleChunkAGRP();
                 var previous = -1;
@@ -598,42 +664,15 @@ public abstract class RawMods : ModsBase
                 newChunks[name] = Data.FORM.Chunks[name];
             Data.FORM.Chunks = newChunks;
             Data.GeneralInfo.BytecodeVersion = 16;
-            ScriptMessage("Upgraded from " + currentBytecodeVersion + " to 16 successfully. Save the game to apply the changes.");
-            ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
-            
-            RemoveFunctions();
+            ScriptMessage("Upgraded from " + bcVersion + " to 16 successfully.");
         }
-        else if (Data?.GeneralInfo.BytecodeVersion == 17)
-        {
-                ScriptMessage("Cancelled.");
-                return;
-        }
-        else if (Data?.GeneralInfo.BytecodeVersion == 16)
+        else if (bcVersion == 16)
         {
             ScriptMessage("This is already bytecode 16.");
-            ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
-            
-            RemoveFunctions();
-            
-            return;
         }
-        else
-        {
-            string error = @"This game is not bytecode 13, 
-        14, 15, 16, or 17, and is not made in GameMaker 2.3
-        or greater. Please report this game to Grossley#2869
-        on Discord and provide the name of the game, where
-        you obtained it from, and additionally send the
-        data.win file of the game." + @"
 
-        Current status of game '" + game_name + @"':
-        GMS 2.3 == " + Data.GMS2_3 + @"
-        GMS 2.3.1 == " + Data.GMS2_3_1 + @"
-        GMS 2.3.2 == " + Data.GMS2_3_2 + @"
-        Bytecode == " + (Data?.GeneralInfo.BytecodeVersion);
-            ScriptError(error);
-            return;
-        }
+        ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
+        RemoveFunctions();
 
         void RemoveFunctions()
         {

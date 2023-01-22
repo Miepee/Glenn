@@ -3,14 +3,7 @@ namespace AM2RPortHelperLib;
 public abstract class ModsBase
 {
     public delegate void OutputHandlerDelegate(string output);
-
-    protected static OutputHandlerDelegate OutputHandler;
-
-    protected static void SendOutput(string output)
-    {
-        OutputHandler?.Invoke(output);
-    }
-
+    
     // Create before accessing anything
     static ModsBase()
     {
