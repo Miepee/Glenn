@@ -16,8 +16,6 @@ internal static class Program
     private static int Main(string[] args)
     {
         //LauncherMods.PortLauncherMod("/home/narr/Downloads/UnofficialMultitroidAPKTest1_6b.zip", Core.ModOS.Linux, true, "./foo.zip");
-        //TODO: If icon paths are not set, these are currently not taken from the config dir!
-        
         var interactiveOption = new Option<bool>(new[] { "-i", "--interactive" }, "Use an interactive mode. This will ignore all other options.");
         var fileOption = new Option<FileInfo>(new[] { "-f", "--file" }, "The file path to the raw mod that should be ported. *REQUIRED IN NON-INTERACTIVE*");
         var windowsOption = new Option<FileInfo>(new[] { "-w", "--windows" }, "The output file path for the Windows mod. None given equals to no Windows port.");
@@ -26,17 +24,15 @@ internal static class Program
         var macOption = new Option<FileInfo>(new[] { "-m", "--mac" }, "The output file path for the Mac mod. None given equals to no Mac port.");
         var iconOption = new Option<FileInfo>(new[] { "-c", "--icon" }, "The file path to an icon PNG that should be used for the taskbar/dock/home screen. " +
                                                                          "If this is not set, it will read \"icon.png\" from the config folder. If that file does not exist, a stock icon will be used.");
-        var splashOption = new Option<FileInfo>(new[] { "-p", "--splash" }, "The file path to a splash PNG that should be used when booting the game. " +
-                                                                            //TODO: only use splash.png
-                                                                         "If this is not set, it will read \"splash.png\" (or \"splashAndroid.png\" for Android) from the config folder. " +
+        var splashOption = new Option<FileInfo>(new[] { "-p", "--splash" }, "The file path to a splash PNG that should be used when booting the game. " + 
+                                                                            "If this is not set, it will read \"splash.png\" from the config folder. " +
                                                                          "If that file does not exist, a stock splash will be used.");
-        // TODO: double check whether its not possible to have the same splash screen for both desktop and mobile
         var customSaveOption = new Option<bool>(new[] { "-s", "--customsave" }, "Whether the Android Port should use a custom save location. Has no effect on other OS.");
         
         var internetOption = new Option<bool>(new[] { "-n", "--internet" }, "Add internet usage permissions to the Android mod. Has no effect on other OS.");
         var verboseOption = new Option<bool>(new[] { "-v", "--verbose" }, "Whether to show verbose output.");
 
-        RootCommand rootCommand = new RootCommand("A utility to port Windows AM2R Mods to other operating systems.")
+        RootCommand rootCommand = new RootCommand("A utility to port AM2R Mods to other operating systems.")
         {
             interactiveOption,
             fileOption,
@@ -94,7 +90,16 @@ internal static class Program
             if (beVerbose)
                 OutputHandlerDelegate(output);
         }
+        
+        iconPath = new FileInfo(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), iconPath?.FullName));
+        splashPath = new FileInfo(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), splashPath?.FullName));
 
+        if (beVerbose)
+        {
+            Console.WriteLine("Use " + iconPath.FullName + " as a path for icons.");
+            Console.WriteLine("Use " + splashPath.FullName + " as a path for splash screen.");
+        }
+        
         if (windowsPath is not null)
         {
             RawMods.PortToWindows(inputModPath.FullName, windowsPath.FullName, LocalOutput);
