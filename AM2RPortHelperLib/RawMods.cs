@@ -26,6 +26,12 @@ public abstract class RawMods : ModsBase
     /// <exception cref="NotSupportedException">The OS for which the zip was made for could not be determined.</exception>
     public static ModOS GetModOSOfRawZip(string inputRawZipPath)
     {
+        if (inputRawZipPath is null)
+            throw new ArgumentNullException(nameof(inputRawZipPath) + " cannot be null!");
+
+        if (!File.Exists(inputRawZipPath))
+            throw new FileNotFoundException(nameof(inputRawZipPath) + " does not exist!");
+
         ZipArchive archive = ZipFile.OpenRead(inputRawZipPath);
         // Since exe's can be differently named, we'll search for exactly one exe in no subdirectories.
         var exeList = archive.Entries.Where(f => f.FullName.EndsWith(".exe")).ToList();
@@ -94,6 +100,8 @@ public abstract class RawMods : ModsBase
     /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
     public static void PortToWindows(string inputRawZipPath, string outputRawZipPath, OutputHandlerDelegate outputDelegate = null)
     {
+        CheckIfOutputPathIsNull(outputRawZipPath);
+        
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
 
@@ -160,6 +168,8 @@ public abstract class RawMods : ModsBase
     public static void PortToLinux(string inputRawZipPath, string outputRawZipPath, string pathToIcon = null, string pathToSplashScreen = null,
                                    OutputHandlerDelegate outputDelegate = null)
     {
+        CheckIfOutputPathIsNull(outputRawZipPath);
+        
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
 
@@ -235,6 +245,8 @@ public abstract class RawMods : ModsBase
     public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, string pathToIcon = null, string pathToSplashScreen = null, 
                                      bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
+        CheckIfOutputPathIsNull(outputRawApkPath);
+        
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
@@ -432,6 +444,8 @@ public abstract class RawMods : ModsBase
     public static void PortToMac(string inputRawZipPath, string outputRawZipPath, string pathToIcon = null, string pathToSplashScreen = null,
                                  OutputHandlerDelegate outputDelegate = null)
     {
+        CheckIfOutputPathIsNull(outputRawZipPath);
+        
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
 
@@ -541,10 +555,15 @@ public abstract class RawMods : ModsBase
         //zip the result
         outputDelegate.SendOutput("Creating Mac zip...");
         ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
-
+        
         // Clean up
         Directory.Delete(TempDir, true);
     }
+
+    private static void CheckIfOutputPathIsNull(string outputPath)
+    {
+        if (outputPath is null || String.IsNullOrWhiteSpace(outputPath)) throw new ArgumentOutOfRangeException(nameof(outputPath) + " cannot be null!");
+    } 
     
     /// <summary>
     /// Converts a GameMaker data file to bytecode version 16

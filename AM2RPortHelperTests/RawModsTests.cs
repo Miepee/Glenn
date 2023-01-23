@@ -267,6 +267,10 @@ public class RawModsTests
         Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
     
+    #endregion
+    
+    #region PortToMac
+    
     [Theory]
     [InlineData("./GameWin.zip", false, false)]
     [InlineData("./GameLin.zip", false, false)]
@@ -367,7 +371,35 @@ public class RawModsTests
         Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First(d => d.Name == "English.lproj").Name);
         Assert.True(File.Exists(newExtract + "/" + appDir.Name + "/Contents/Resources/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
+    
+    #endregion
 
+    #region PortInvalidZips
+
+    [Fact]
+    public void PortInvalidZipToWindows()
+    {
+        Assert.Throws<ArgumentNullException>(() => RawMods.PortToWindows(null, "/foo"));
+        Assert.Throws<FileNotFoundException>(() => RawMods.PortToWindows("/foo", "/foo"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToWindows("./GameLin.zip", null));
+    }
+    
+    [Fact]
+    public void PortInvalidZipToLinux()
+    {
+        Assert.Throws<ArgumentNullException>(() => RawMods.PortToLinux(null, "/foo"));
+        Assert.Throws<FileNotFoundException>(() => RawMods.PortToLinux("/foo", "/foo"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToLinux("./GameLin.zip", null));
+    }
+    
+    [Fact]
+    public void PortInvalidZipToMac()
+    {
+        Assert.Throws<ArgumentNullException>(() => RawMods.PortToMac(null, "/foo"));
+        Assert.Throws<FileNotFoundException>(() => RawMods.PortToMac("/foo", "/foo"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToMac("./GameLin.zip", null));
+    }
+    
     #endregion
     
     // TODO: write tests for porttoandroid
