@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Wpf", "AM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModLib", "UndertaleModTool\UndertaleModLib\UndertaleModLib.csproj", "{F402FD71-4FF4-4E2E-ADCD-A45FBDAFD713}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperTests", "AM2RPortHelperTests\AM2RPortHelperTests.csproj", "{716D3686-423D-4618-8769-03982463AD04}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{F402FD71-4FF4-4E2E-ADCD-A45FBDAFD713}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F402FD71-4FF4-4E2E-ADCD-A45FBDAFD713}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F402FD71-4FF4-4E2E-ADCD-A45FBDAFD713}.Release|Any CPU.Build.0 = Release|Any CPU
+		{716D3686-423D-4618-8769-03982463AD04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{716D3686-423D-4618-8769-03982463AD04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{716D3686-423D-4618-8769-03982463AD04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{716D3686-423D-4618-8769-03982463AD04}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
