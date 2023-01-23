@@ -547,7 +547,7 @@ public abstract class RawMods : ModsBase
     /// </summary>
     /// <param name="Data">The GameMaker data file.</param>
     /// <param name="output">Delegate on where to send output messages to.</param>
-    /// <exception cref="NotSupportedException"><paramref name="Data"/> has a not supported Bytecode version.</exception>
+    /// <exception cref="NotSupportedException"><paramref name="Data"/> has a not supported Bytecode version (13, 14, GM2.3+).</exception>
     private static void ChangeToByteCode16(UndertaleData Data, OutputHandlerDelegate output)
     {
         if (Data is null) return;

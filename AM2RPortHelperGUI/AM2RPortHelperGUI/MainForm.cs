@@ -116,29 +116,17 @@ public partial class MainForm : Form
         buttonEditIcon.Click += ButtonEditIconClick;
         buttonEditSplash.Click += ButtonEditSplashClick;
     }
-    
-    // TODO: condense these
+
     private void ButtonEditSplashClick(object sender, EventArgs e)
     {
-        var dialog = new OpenFileDialog();
-        if (dialog.ShowDialog(this) != DialogResult.Ok)
-            return;
-        
-        File.Copy(dialog.FileName, userSplashPath, true);
-        imageViewSplash.Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.splash)));
+        ButtonEditResourceClick(imageViewSplash, nameof(Resources.splash));
     }
+    
     private void ButtonEditIconClick(object sender, EventArgs e)
     {
-        var dialog = new OpenFileDialog();
-        if (dialog.ShowDialog(this) != DialogResult.Ok)
-            return;
-        
-        File.Copy(dialog.FileName, userIconPath, true);
-
-        imageViewIcon.Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.icon)));
+        ButtonEditResourceClick(imageViewIcon, nameof(Resources.icon));
     }
-
-    // Helper functions
+    
     private async void ButtonPortOnClick(object sender, EventArgs e)
     {
         SetDisableStatusOfAllElements(true);
@@ -146,6 +134,7 @@ public partial class MainForm : Form
         void OutputHandlerDelegate(string output) => Application.Instance.Invoke(() => labelProgress.Text = $"Info: {output}");
         string modZipPath = filePicker.FilePath;
         string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+        // TODO: ask where to save them!
         string windowsPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_WINDOWS.zip"; 
         string linuxPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_LINUX.zip";
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
@@ -199,6 +188,7 @@ public partial class MainForm : Form
         SetDisableStatusOfAllElements(false);
     }
     
+    // Helper functions
     private static void OpenFolder(string path)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -230,7 +220,25 @@ public partial class MainForm : Form
         checkboxUseCustomSave.Enabled = !disabled;
     }
 
+    private void ButtonEditResourceClick(ImageView control, string nameOfResource)
+    {
+        var dialog = new OpenFileDialog() {Title = "Select new " + nameOfResource};
+        if (dialog.ShowDialog(this) != DialogResult.Ok)
+            return;
+
+        string destName = nameOfResource switch
+        {
+            nameof(Resources.icon) => userIconPath,
+            nameof(Resources.splash) => userSplashPath,
+            _ => throw new Exception("You dun goofed!")
+        };
+        
+        File.Copy(dialog.FileName, destName, true);
+        control.Image = new Bitmap(GetByteArrayFromResource(nameOfResource));
+    }
+
     // Attributes
+    #region Attributes
     private readonly Label labelSelectMod = new Label
     {
         Text = "Select Mod:"
@@ -310,4 +318,5 @@ public partial class MainForm : Form
         Text = "Port!",
         Enabled = false
     };
+    #endregion
 }
