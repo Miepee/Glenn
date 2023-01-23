@@ -552,33 +552,19 @@ public abstract class RawMods : ModsBase
     {
         if (Data is null) return;
         
-        string game_name = Data.GeneralInfo.Name.Content;
-
-        void ScriptMessage(string s) => output(s);
+        byte? bcVersion = Data.GeneralInfo.BytecodeVersion;
+        void ScriptMessage(string s) => output?.Invoke(s);
         
         if (!Data.FORM.Chunks.ContainsKey("AGRP"))
-        {
             throw new NotSupportedException("Bytecode 13 is not supported.");
-        }
-        byte? bcVersion = Data?.GeneralInfo.BytecodeVersion;
         if (bcVersion == 14)
-        {
             throw new NotSupportedException("Bytecode 14 is not supported.");
-        }
         if (bcVersion == 17)
-        {
             throw new NotSupportedException("Bytecode 17 is not supported.");
-        }
         if (!((Data.GMS2_3 == false) && (Data.GMS2_3_1 == false) && (Data.GMS2_3_2 == false)))
-        {
-            throw new NotSupportedException(game_name + "is GMS 2.3+ and is ineligible");
-        }
-
+            throw new NotSupportedException("GMS 2.3+ is not supported.");
         if (bcVersion != 14 && bcVersion != 15 && bcVersion != 16)
-        {
             throw new NotSupportedException("Unknown Bytecode version!");
-        }
-            
         
         if ((bcVersion == 14) || (bcVersion == 15))
         {
@@ -649,15 +635,15 @@ public abstract class RawMods : ModsBase
                 var newProductID = new byte[] { 0xBA, 0x5E, 0xBA, 0x11, 0xBA, 0xDD, 0x06, 0x60, 0xBE, 0xEF, 0xED, 0xBA, 0x0B, 0xAB, 0xBA, 0xBE };
                 Data.FORM.EXTN.productIdData.Add(newProductID);
                 Data.Options.Constants.Clear();
-                Data.Options.Constants.Add(new UndertaleOptions.Constant() { Name = Data.Strings.MakeString("@@SleepMargin"), Value = Data.Strings.MakeString(1.ToString()) });
-                Data.Options.Constants.Add(new UndertaleOptions.Constant() { Name = Data.Strings.MakeString("@@DrawColour"), Value = Data.Strings.MakeString(0xFFFFFFFF.ToString()) });
+                Data.Options.Constants.Add(new UndertaleOptions.Constant { Name = Data.Strings.MakeString("@@SleepMargin"), Value = Data.Strings.MakeString(1.ToString()) });
+                Data.Options.Constants.Add(new UndertaleOptions.Constant { Name = Data.Strings.MakeString("@@DrawColour"), Value = Data.Strings.MakeString(0xFFFFFFFF.ToString()) });
             }
             Data.FORM.Chunks["LANG"] = new UndertaleChunkLANG();
             Data.FORM.LANG.Object = new UndertaleLanguage();
             Data.FORM.Chunks["GLOB"] = new UndertaleChunkGLOB();
-            String[] order = { "GEN8", "OPTN", "LANG", "EXTN", "SOND", "AGRP", "SPRT", "BGND", "PATH", "SCPT", "GLOB", "SHDR", "FONT", "TMLN", "OBJT", "ROOM", "DAFL", "TPAG", "CODE", "VARI", "FUNC", "STRG", "TXTR", "AUDO" };
+            string[] order = { "GEN8", "OPTN", "LANG", "EXTN", "SOND", "AGRP", "SPRT", "BGND", "PATH", "SCPT", "GLOB", "SHDR", "FONT", "TMLN", "OBJT", "ROOM", "DAFL", "TPAG", "CODE", "VARI", "FUNC", "STRG", "TXTR", "AUDO" };
             Dictionary<string, UndertaleChunk> newChunks = new Dictionary<string, UndertaleChunk>();
-            foreach (String name in order)
+            foreach (string name in order)
                 newChunks[name] = Data.FORM.Chunks[name];
             Data.FORM.Chunks = newChunks;
             Data.GeneralInfo.BytecodeVersion = 16;
@@ -669,20 +655,15 @@ public abstract class RawMods : ModsBase
         }
 
         ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
-        RemoveFunctions();
-
-        void RemoveFunctions()
-        {
-            List<UndertaleFunction> funcsToRemove = new List<UndertaleFunction>();
+        List<UndertaleFunction> funcsToRemove1 = new List<UndertaleFunction>();
             
-            foreach (UndertaleFunction func in Data.Functions)
-            {   
-                if (func.ToString() == "immersion_play_effect" || func.ToString() == "immersion_stop" || func.ToString() == "font_replace")
-                    funcsToRemove.Add(func);
-            }
-            
-            foreach (var func in funcsToRemove)
-                Data.Functions.Remove(func);    
+        foreach (UndertaleFunction func1 in Data.Functions)
+        {   
+            if (func1.ToString() == "immersion_play_effect" || func1.ToString() == "immersion_stop" || func1.ToString() == "font_replace")
+                funcsToRemove1.Add(func1);
         }
+            
+        foreach (var func2 in funcsToRemove1)
+            Data.Functions.Remove(func2);
     }
 }
