@@ -116,7 +116,7 @@ public class RawModsTests
         var outputZip = testTempDir + Guid.NewGuid();
         var origExtract = testTempDir + Guid.NewGuid();
         var newExtract = testTempDir + Guid.NewGuid() + "/";
-        var deepSuffix = "foobar/foobar/foo/blag/";
+        var deepSuffix = "Foobar/Foobar/Foo/Blag/";
         var origInput = inputZip;
         
         if (useSubdirectories)
@@ -139,13 +139,14 @@ public class RawModsTests
         RawMods.PortToWindows(inputZip, outputZip);
         // Our function should see that its a windows zip
         Assert.True(RawMods.GetModOSOfRawZip(outputZip) == Core.ModOS.Windows);
+        
+        ZipFile.ExtractToDirectory(inputZip, origExtract);
+        ZipFile.ExtractToDirectory(outputZip, newExtract);
         switch (origMod)
         {
             case Core.ModOS.Windows:
             {
                 // File contents should be same between the zips
-                ZipFile.ExtractToDirectory(inputZip, origExtract);
-                ZipFile.ExtractToDirectory(outputZip, newExtract);
                 var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name).ToList();
                 origFiles.Sort();
                 var newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name).ToList();
@@ -156,8 +157,6 @@ public class RawModsTests
             case Core.ModOS.Linux:
             {
                 // File contents should be same between the zips except for runner missing in original and data file being different
-                ZipFile.ExtractToDirectory(inputZip, origExtract);
-                ZipFile.ExtractToDirectory(outputZip, newExtract);
                 List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 origFiles.Remove("game.unx");
                 origFiles.Add("data.win");
@@ -182,6 +181,7 @@ public class RawModsTests
     }
     #endregion
 
+    // TODO: check that the ports here use the icons we specified
     #region PortToLinux
 
     [Theory]
@@ -195,7 +195,7 @@ public class RawModsTests
         var outputZip = testTempDir + Guid.NewGuid();
         var origExtract = testTempDir + Guid.NewGuid();
         var newExtract = testTempDir + Guid.NewGuid() + "/";
-        var deepSuffix = "foobar/foobar/foo/blag/";
+        var deepSuffix = "Foobar/Foobar/Foo/Blag/";
         var origInput = inputZip;
         
         if (useSubdirectories)
@@ -218,22 +218,22 @@ public class RawModsTests
         RawMods.PortToLinux(inputZip, outputZip);
         // Our function should see that its a linux zip
         Assert.True(RawMods.GetModOSOfRawZip(outputZip) == Core.ModOS.Linux);
+        
+        ZipFile.ExtractToDirectory(inputZip, origExtract);
+        ZipFile.ExtractToDirectory(outputZip, newExtract);
         switch (origMod)
         {
             case Core.ModOS.Windows:
             {
-                // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon, ogg being lowered and data file being different
-                ZipFile.ExtractToDirectory(inputZip, origExtract);
-                ZipFile.ExtractToDirectory(outputZip, newExtract);
-                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name).ToList();
-                origFiles.Remove("AM2R Server.exe");
-                origFiles.Remove("D3DX9_43.dll");
+                // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon,
+                // files being lowered and data file being different
+                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name.ToLower()).ToList();
+                origFiles.Remove("am2r server.exe");
+                origFiles.Remove("d3dx9_43.dll");
                 origFiles.Add("splash.png");
                 origFiles.Add("icon.png");
                 origFiles.Remove("data.win");
                 origFiles.Add("game.unx");
-                origFiles.Remove("CoolSong.ogg");
-                origFiles.Add("coolsong.ogg");
                 origFiles.Sort();
                 var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 newFiles.Sort();
@@ -243,8 +243,6 @@ public class RawModsTests
             case Core.ModOS.Linux:
             {
                 // File contents should be same between the zips
-                ZipFile.ExtractToDirectory(inputZip, origExtract);
-                ZipFile.ExtractToDirectory(outputZip, newExtract);
                 List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 origFiles.Sort();
                 List<string> newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
@@ -260,16 +258,107 @@ public class RawModsTests
         // If we didn't specify any, there should no more subdirs after that at the end
         if (!useSubdirectories)
         {
-            
             Assert.Empty(new DirectoryInfo(newExtract + "/assets").GetDirectories());
             return;
         }
         
         //Otherwise there should be our stuff
-        Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix + origInput));
+        Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix.ToLower() + origInput.ToLower()));
+    }
+    
+    [Theory]
+    [InlineData("./GameWin.zip", false, false)]
+    [InlineData("./GameLin.zip", false, false)]
+    [InlineData("./GameWin.zip", true, true)]
+    [InlineData("./GameLin.zip", true, true)]
+    public void PortZipToMac(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand)
+    {
+        var origMod = RawMods.GetModOSOfRawZip(inputZip);
+        var outputZip = testTempDir + Guid.NewGuid();
+        var origExtract = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        var deepSuffix = "Foobar/Foobar/Foo/Blag/";
+        var origInput = inputZip;
+        
+        if (useSubdirectories)
+        {
+            string archiveDeepSuffix = deepSuffix;
+            if (origMod == Core.ModOS.Linux)
+            {
+                archiveDeepSuffix =  "assets/" + deepSuffix;
+            }
+            
+            File.Copy(inputZip, testTempDir + inputZip + "_modified");
+            inputZip = testTempDir + inputZip + "_modified";
+            using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
+            archive.CreateEntry(archiveDeepSuffix + origInput);
+        }
+        
+        if (createWorkingDirectoryBeforeHand)
+            Directory.CreateDirectory(libTempDir + Path.GetFileNameWithoutExtension(inputZip));
+        
+        RawMods.PortToMac(inputZip, outputZip);
+        // Our function should see that its a mac zip
+        Assert.True(RawMods.GetModOSOfRawZip(outputZip) == Core.ModOS.Mac);
+        
+        ZipFile.ExtractToDirectory(inputZip, origExtract);
+        ZipFile.ExtractToDirectory(outputZip, newExtract);
+        var appDir = new DirectoryInfo(newExtract).GetDirectories().First(n => n.Name.EndsWith(".app"));
+        switch (origMod)
+        {
+            case Core.ModOS.Windows:
+            {
+                // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon,
+                // files being lowercase, data file being different a new gamecontrollerdb and a new yoyorunner.config
+                
+                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name.ToLower()).ToList();
+                origFiles.Remove("am2r server.exe");
+                origFiles.Remove("d3dx9_43.dll");
+                origFiles.Add("splash.png");
+                origFiles.Add("icon.png");
+                origFiles.Remove("data.win");
+                origFiles.Add("game.ios");
+                origFiles.Add("gamecontrollerdb.txt");
+                origFiles.Add("yoyorunner.config");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(appDir.FullName + "/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Linux:
+            {
+                // File contents should be same between the zips except for all files being lowercase, data file being different and mac specific files
+                List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name.ToLower()).ToList();
+                origFiles.Remove("game.unx");
+                origFiles.Add("game.ios");
+                origFiles.Add("gamecontrollerdb.txt");
+                origFiles.Add("yoyorunner.config");
+                origFiles.Sort();
+                List<string> newFiles = new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+        }
+        
+        // There should be exactly one subdir here and it should end with .app
+        Assert.Single(new DirectoryInfo(newExtract).GetDirectories());
+        Assert.EndsWith(".app", new DirectoryInfo(newExtract).GetDirectories().First().Name);
+        
+        // If we didn't specify any, there should one more subdirs after that at the end (the English.lproj)
+        if (!useSubdirectories)
+        {
+            Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First().Name);
+            return;
+        }
+        
+        //Otherwise there should be also stuff
+        Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First(d => d.Name == "English.lproj").Name);
+        Assert.True(File.Exists(newExtract + "/" + appDir.Name + "/Contents/Resources/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
 
     #endregion
     
-    // TODO: write tests for porttoandroid, porttomac
+    // TODO: write tests for porttoandroid
 }

@@ -32,11 +32,14 @@ public abstract class RawMods : ModsBase
         if (exeList.Count == 1 && !exeList[0].FullName.Contains('/') && archive.Entries.Any(f => f.FullName == "data.win"))
             return ModOS.Windows;
         
+        //TODO: any uppercase files should be invalid!
         if (archive.Entries.Any(f => f.FullName == "runner") && archive.Entries.Any(f => f.FullName == "assets/game.unx"))
             return ModOS.Linux;
         
         // I probably *should* use fullpaths for these, but the .app file could technically be different and don't want to thinka bout how to circumvent it
-        if (archive.Entries.Any(f => f.FullName.Contains("Contents/MacOS/Mac_Runner")) && archive.Entries.Any(f => f.FullName.Contains("Contents/Resources/game.ios")))
+        if (archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/MacOS/Mac_Runner")) && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Resources/game.ios"))
+            && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Info.plist")) && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/PkgInfo"))
+            && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Frameworks/libYoYoGamepad.dylib")) && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Frameworks/libYoYoIAP.dylib")))
             return ModOS.Mac;
         
         throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");

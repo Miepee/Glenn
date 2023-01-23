@@ -28,7 +28,8 @@ public static class HelperMethods
             // ReSharper disable once PossibleNullReferenceException - since this is a subdirectory, it always has a parent
             // Windows is dumb, thus we need to move in two trips
             subDir.MoveTo(subDir.Parent.FullName + "/" + subDir.Name.ToLower() + "_");
-            subDir.MoveTo(subDir.FullName.Substring(0, subDir.FullName.Length-1));
+            // -2 because after a moving operation, DirInfo already appends a / 
+            subDir.MoveTo(subDir.FullName.Substring(0, subDir.FullName.Length-2));
             LowercaseFolder(subDir.FullName);
         }
     }
