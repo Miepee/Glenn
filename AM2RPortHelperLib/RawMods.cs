@@ -132,6 +132,7 @@ public abstract class RawMods : ModsBase
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported.");
         }
         
+        // TODO: is missing the d3dx9_dll
         File.Copy(UtilDir + "/executable.exe", extractDirectory + "/AM2R.exe");
 
         //zip the result

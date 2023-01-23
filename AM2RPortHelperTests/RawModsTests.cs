@@ -106,11 +106,11 @@ public class RawModsTests
     #region PortToWindows
     
     [Theory]
-    [InlineData("./GameWin.zip", false)]
-    [InlineData("./GameLin.zip", false)]
-    [InlineData("./GameWin.zip", true)]
-    [InlineData("./GameLin.zip", true)]
-    public void PortZipToWindows(string inputZip, bool useSubdirectories)
+    [InlineData("./GameWin.zip", false, false)]
+    [InlineData("./GameLin.zip", false, false)]
+    [InlineData("./GameWin.zip", true, true)]
+    [InlineData("./GameLin.zip", true, true)]
+    public void PortZipToWindows(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);
         var outputZip = testTempDir + Guid.NewGuid();
@@ -132,6 +132,9 @@ public class RawModsTests
             using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
             archive.CreateEntry(archiveDeepSuffix + origInput);
         }
+
+        if (createWorkingDirectoryBeforeHand)
+            Directory.CreateDirectory(libTempDir + Path.GetFileNameWithoutExtension(inputZip));
         
         RawMods.PortToWindows(inputZip, outputZip);
         // Our function should see that its a windows zip
@@ -143,8 +146,10 @@ public class RawModsTests
                 // File contents should be same between the zips
                 ZipFile.ExtractToDirectory(inputZip, origExtract);
                 ZipFile.ExtractToDirectory(outputZip, newExtract);
-                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name);
-                var newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name);
+                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name).ToList();
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
             }
@@ -176,6 +181,95 @@ public class RawModsTests
         Assert.True(File.Exists(newExtract + deepSuffix + origInput));
     }
     #endregion
+
+    #region PortToLinux
+
+    [Theory]
+    [InlineData("./GameWin.zip", false, false)]
+    [InlineData("./GameLin.zip", false, false)]
+    [InlineData("./GameWin.zip", true, true)]
+    [InlineData("./GameLin.zip", true, true)]
+    public void PortZipToLinux(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand)
+    {
+        var origMod = RawMods.GetModOSOfRawZip(inputZip);
+        var outputZip = testTempDir + Guid.NewGuid();
+        var origExtract = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        var deepSuffix = "foobar/foobar/foo/blag/";
+        var origInput = inputZip;
+        
+        if (useSubdirectories)
+        {
+            string archiveDeepSuffix = deepSuffix;
+            if (origMod == Core.ModOS.Linux)
+            {
+                archiveDeepSuffix =  "assets/" + deepSuffix;
+            }
+            
+            File.Copy(inputZip, testTempDir + inputZip + "_modified");
+            inputZip = testTempDir + inputZip + "_modified";
+            using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
+            archive.CreateEntry(archiveDeepSuffix + origInput);
+        }
+        
+        if (createWorkingDirectoryBeforeHand)
+            Directory.CreateDirectory(libTempDir + Path.GetFileNameWithoutExtension(inputZip));
+        
+        RawMods.PortToLinux(inputZip, outputZip);
+        // Our function should see that its a linux zip
+        Assert.True(RawMods.GetModOSOfRawZip(outputZip) == Core.ModOS.Linux);
+        switch (origMod)
+        {
+            case Core.ModOS.Windows:
+            {
+                // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon, ogg being lowered and data file being different
+                ZipFile.ExtractToDirectory(inputZip, origExtract);
+                ZipFile.ExtractToDirectory(outputZip, newExtract);
+                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name).ToList();
+                origFiles.Remove("AM2R Server.exe");
+                origFiles.Remove("D3DX9_43.dll");
+                origFiles.Add("splash.png");
+                origFiles.Add("icon.png");
+                origFiles.Remove("data.win");
+                origFiles.Add("game.unx");
+                origFiles.Remove("CoolSong.ogg");
+                origFiles.Add("coolsong.ogg");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Linux:
+            {
+                // File contents should be same between the zips
+                ZipFile.ExtractToDirectory(inputZip, origExtract);
+                ZipFile.ExtractToDirectory(outputZip, newExtract);
+                List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                origFiles.Sort();
+                List<string> newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+        }
+        
+        // There should be exactly one subdir here
+        Assert.Single(new DirectoryInfo(newExtract).GetDirectories());
+        
+        // If we didn't specify any, there should no more subdirs after that at the end
+        if (!useSubdirectories)
+        {
+            
+            Assert.Empty(new DirectoryInfo(newExtract + "/assets").GetDirectories());
+            return;
+        }
+        
+        //Otherwise there should be our stuff
+        Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix + origInput));
+    }
+
+    #endregion
     
-    // TODO: write tests for porttolinux, porttoandroid, porttomac
+    // TODO: write tests for porttoandroid, porttomac
 }
