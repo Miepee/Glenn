@@ -38,7 +38,7 @@ jobs:
       run: dotnet restore
     - name: Build
       working-directory: ./AM2RPortHelperCLI
-      run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}"
+      run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}" /p:WarningLevel=3
     # Steps for uploading artifacts.
     - name: Zip to Archive
       run: 7z a -tzip ${{ matrix.os }}.zip ./${{ matrix.ARTIFACT }}
@@ -83,7 +83,7 @@ jobs:
       run: dotnet restore
     - name: Build
       working-directory: ./AM2RPortHelperGUI/${{ matrix.DIR }}
-      run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}"
+      run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}" /p:WarningLevel=3
     # Steps for uploading artifacts.
     - name: Zip to Archive
       run: 7z a -tzip ${{ matrix.os }}.zip ./AM2RPortHelperGUI/${{ matrix.ARTIFACT }}
