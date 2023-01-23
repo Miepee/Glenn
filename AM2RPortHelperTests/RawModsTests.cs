@@ -203,13 +203,13 @@ public class RawModsTests
             string archiveDeepSuffix = deepSuffix;
             if (origMod == Core.ModOS.Linux)
             {
-                archiveDeepSuffix =  "assets/" + deepSuffix;
+                archiveDeepSuffix =  "assets/" + deepSuffix.ToLower();
             }
             
-            File.Copy(inputZip, testTempDir + inputZip + "_modified");
-            inputZip = testTempDir + inputZip + "_modified";
+            File.Copy(inputZip, testTempDir + inputZip.ToLower() + "_modified");
+            inputZip = testTempDir + inputZip.ToLower() + "_modified";
             using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
-            archive.CreateEntry(archiveDeepSuffix + origInput);
+            archive.CreateEntry(archiveDeepSuffix + origInput.ToLower());
         }
         
         if (createWorkingDirectoryBeforeHand)
