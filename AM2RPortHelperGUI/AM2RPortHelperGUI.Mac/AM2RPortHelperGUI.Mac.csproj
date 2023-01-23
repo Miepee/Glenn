@@ -3,6 +3,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
+        <RollForward>LatestMajor</RollForward>
 
         <RuntimeIdentifiers>osx-x64;osx-arm64</RuntimeIdentifiers>
     </PropertyGroup>
