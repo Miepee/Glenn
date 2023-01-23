@@ -143,6 +143,8 @@ public class RawModsTests
                 break;
             }
         }
+        // There should be no subdirectories at the end
+        Assert.Equal(0, new DirectoryInfo(newExtract).GetDirectories().Length);
     }
     #endregion
     
