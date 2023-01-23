@@ -92,3 +92,20 @@ jobs:
       with:
         name: GUI-${{ matrix.os }}
         path: ${{ matrix.os }}.zip
+
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with: 
+        submodules: true
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      working-directory: ./AM2RPortHelperTests/
+      run: dotnet restore
+    - name: Test
+      run: dotnet test
