@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
 using AM2RPortHelperLib;
+using UndertaleModLib;
 using UndertaleModLib.Decompiler;
 using Xunit;
 using Xunit.Abstractions;
@@ -298,12 +299,21 @@ public class RawModsTests
             Directory.CreateDirectory(libTempDir + Path.GetFileNameWithoutExtension(inputZip));
         
         RawMods.PortToMac(inputZip, outputZip);
+        
         // Our function should see that its a mac zip
         Assert.True(RawMods.GetModOSOfRawZip(outputZip) == Core.ModOS.Mac);
         
         ZipFile.ExtractToDirectory(inputZip, origExtract);
         ZipFile.ExtractToDirectory(outputZip, newExtract);
         var appDir = new DirectoryInfo(newExtract).GetDirectories().First(n => n.Name.EndsWith(".app"));
+        
+        // Confirm via UTMT that it is indeed BC16
+        using (FileStream fs = new FileInfo(appDir.FullName + "/Contents/Resources/game.ios").OpenRead())
+        {
+            UndertaleData gmData = UndertaleIO.Read(fs);
+            Assert.Equal(16, gmData.GeneralInfo.BytecodeVersion);
+        }
+        
         switch (origMod)
         {
             case Core.ModOS.Windows:
