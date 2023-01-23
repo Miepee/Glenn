@@ -655,7 +655,7 @@ public abstract class RawMods : ModsBase
         }
 
         ScriptMessage("Trying to remove functions \"immersion_play_effect\", \"immersion_stop\" and \"font_replace\"!");
-        foreach (UndertaleFunction func in Data.Functions)
+        foreach (UndertaleFunction func in Data.Functions.ToList())
         {
             if (func.ToString() == "immersion_play_effect" || func.ToString() == "immersion_stop" || func.ToString() == "font_replace")
                 Data.Functions.Remove(func);
