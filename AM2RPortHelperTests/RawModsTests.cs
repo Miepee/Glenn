@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Reflection;
 using AM2RPortHelperLib;
 using UndertaleModLib.Decompiler;
 using Xunit;
@@ -18,7 +19,8 @@ public class RawModsTests
     public RawModsTests(ITestOutputHelper output)
     {
         Directory.CreateDirectory(libTempDir);
-        testTempDir = Path.GetTempPath() + Guid.NewGuid();
+        testTempDir = Path.GetTempPath() + Guid.NewGuid() + "/";
+        Directory.CreateDirectory(testTempDir);
         this.output = output;
     }
 
@@ -34,7 +36,7 @@ public class RawModsTests
     [Fact]
     public void WindowsZipWithSameRunnerShouldBeWindows()
     {
-        var destinationZip = testTempDir + Guid.NewGuid();
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid() + ".zip";
         ZipFile.ExtractToDirectory("./GameWin.zip", testTempDir);
         File.Move(testTempDir + "/AM2R Server.exe", testTempDir + "/AM2R.exe");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
@@ -45,7 +47,7 @@ public class RawModsTests
     [Fact]
     public void WindowsZipWithTwoRunnersShouldThrow()
     {
-        var destinationZip = testTempDir + Guid.NewGuid();
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
         ZipFile.ExtractToDirectory("./GameWin.zip", testTempDir);
         File.Copy(testTempDir + "/AM2R Server.exe", testTempDir + "/AM2R.exe");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
@@ -104,14 +106,33 @@ public class RawModsTests
     #region PortToWindows
     
     [Theory]
-    [InlineData("./GameWin.zip")]
-    [InlineData("./GameLin.zip")]
-    public void PortZipToWindows(string inputZip)
+    [InlineData("./GameWin.zip", false)]
+    [InlineData("./GameLin.zip", false)]
+    [InlineData("./GameWin.zip", true)]
+    [InlineData("./GameLin.zip", true)]
+    public void PortZipToWindows(string inputZip, bool useSubdirectories)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);
         var outputZip = testTempDir + Guid.NewGuid();
         var origExtract = testTempDir + Guid.NewGuid();
-        var newExtract = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        var deepSuffix = "foobar/foobar/foo/blag/";
+        var origInput = inputZip;
+        
+        if (useSubdirectories)
+        {
+            string archiveDeepSuffix = deepSuffix;
+            if (origMod == Core.ModOS.Linux)
+            {
+                archiveDeepSuffix =  "assets/" + deepSuffix;
+            }
+            
+            File.Copy(inputZip, testTempDir + inputZip + "_modified");
+            inputZip = testTempDir + inputZip + "_modified";
+            using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
+            archive.CreateEntry(archiveDeepSuffix + origInput);
+        }
+        
         RawMods.PortToWindows(inputZip, outputZip);
         // Our function should see that its a windows zip
         Assert.True(RawMods.GetModOSOfRawZip(outputZip) == Core.ModOS.Windows);
@@ -143,8 +164,16 @@ public class RawModsTests
                 break;
             }
         }
-        // There should be no subdirectories at the end
-        Assert.Empty(new DirectoryInfo(newExtract).GetDirectories());
+        
+        // If we didn't specify any, there should be no subdirectories at the end
+        if (!useSubdirectories)
+        {
+            Assert.Empty(new DirectoryInfo(newExtract).GetDirectories());
+            return;
+        }
+        
+        //Otherwise there should be our stuff
+        Assert.True(File.Exists(newExtract + deepSuffix + origInput));
     }
     #endregion
     
