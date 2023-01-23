@@ -1,5 +1,3 @@
-using UndertaleModLib.Compiler;
-
 namespace AM2RPortHelperLib;
 
 public static class ExtensionMethods

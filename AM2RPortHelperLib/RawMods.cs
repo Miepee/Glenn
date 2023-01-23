@@ -242,26 +242,17 @@ public abstract class RawMods : ModsBase
         string apkAssetsDir = apkDir + "/assets";
         string bin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "java";
         string args = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "/C java -jar " : "-jar ";
-        string apktool = CurrentDir + "/utils/apktool.jar";
         string signer = CurrentDir + "/utils/uber-apk-signer.jar";
-        string finalApkBuild = extractDirectory + "/build-aligned-debugSigned.apk";
+        string signedApkBuild = extractDirectory + "/build-aligned-debugSigned.apk";
 
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
         Directory.CreateDirectory(extractDirectory);
-
-        // Run APKTOOL and decompress the file
-        outputDelegate.SendOutput("Decompiling apk...");
-        ProcessStartInfo pStartInfo = new ProcessStartInfo
-        {
-            FileName = bin,
-            Arguments = args + "\"" + apktool + "\" d -f -o \"" + apkDir + "\" \"" + UtilDir + "/AM2RWrapper.apk" + "\"",
-            CreateNoWindow = true
-        };
-        Process p = new Process { StartInfo = pStartInfo };
-        p.Start();
-        p.WaitForExit();
+        
+        // Extract the apk
+        outputDelegate.SendOutput("Extracting apk...");
+        ZipFile.ExtractToDirectory(UtilDir + "/AM2RWrapper.apk", apkDir);
         
         outputDelegate.SendOutput("Extracting for Raw Android...");
         ZipFile.ExtractToDirectory(inputRawZipPath, apkAssetsDir);
@@ -300,12 +291,6 @@ public abstract class RawMods : ModsBase
         //recursively lowercase everything in the assets folder
         outputDelegate.SendOutput("Lowercase everything in the assets folder...");
         HelperMethods.LowercaseFolder(apkAssetsDir);
-
-        // Edit apktool.yml to not compress music
-        outputDelegate.SendOutput("Edit settings file to not compress OGGs...");
-        string yamlFile = File.ReadAllText(apkDir + "/apktool.yml");
-        yamlFile = yamlFile.Replace("doNotCompress:", "doNotCompress:\n- ogg");
-        File.WriteAllText(apkDir + "/apktool.yml", yamlFile);
         
         outputDelegate.SendOutput("Save new icons");
         // Edit the icons in the apk. Wrapper always has these, so we need to overwrite these too.
@@ -386,32 +371,37 @@ public abstract class RawMods : ModsBase
             File.WriteAllText(apkDir + "/AndroidManifest.xml", manifestFile);
         }
 
-        // Run APKTOOL and build the apk
+        // First we zip everything. Then we go through each ogg file, delete it first, create the entry again with a "STORE" flag, and then write its contents there
+        // TODO: probably more efficient to just manually create the zip for each entry?
         outputDelegate.SendOutput("Rebuild apk...");
-        pStartInfo = new ProcessStartInfo
+        string apkBuild = extractDirectory + "/build.apk";
+        ZipFile.CreateFromDirectory(apkDir, apkBuild);
+        outputDelegate.SendOutput("Replace each ogg...");
+        using (ZipArchive archive = new ZipArchive(new FileStream(apkBuild, FileMode.Open), ZipArchiveMode.Update))
         {
-            FileName = bin,
-            Arguments = args + "\"" + apktool + "\" b \"" + apkDir + "\" -o \"" + extractDirectory + "/build.apk" + "\"",
-            CreateNoWindow = true
-        };
-        p = new Process { StartInfo = pStartInfo };
-        p.Start();
-        p.WaitForExit();
+            foreach (var file in new DirectoryInfo(apkAssetsDir).GetFiles().Where(f => f.Extension == ".ogg"))
+            {
+                archive.Entries.First(n => n.FullName == "assets/" + file.Name).Delete();
+                var entry = archive.CreateEntry("assets/" + file.Name, CompressionLevel.NoCompression);
+                using var writer = entry.Open();
+                writer.Write(File.ReadAllBytes(file.FullName));
+            }
+        }
 
         // Sign the apk
         outputDelegate.SendOutput("Sign apk...");
-        pStartInfo = new ProcessStartInfo
+        ProcessStartInfo pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
-            Arguments = args + "\"" + signer + "\" -a \"" + extractDirectory + "/build.apk" + "\"",
+            Arguments = args + "\"" + signer + "\" -a \"" + apkBuild + "\"",
             CreateNoWindow = true
         };
-        p = new Process { StartInfo = pStartInfo };
+        Process p = new Process { StartInfo = pStartInfo };
         p.Start();
         p.WaitForExit();
 
         //Move apk
-        File.Move(finalApkBuild, outputRawApkPath);
+        File.Move(signedApkBuild, outputRawApkPath);
 
         // Clean up
         Directory.Delete(TempDir, true);
@@ -555,15 +545,13 @@ public abstract class RawMods : ModsBase
     {
         if (Data is null) return;
         
-        string game_name = Data.GeneralInfo.Name.Content;
-
         void ScriptMessage(string s) => output(s);
         
         if (!Data.FORM.Chunks.ContainsKey("AGRP"))
         {
             throw new NotSupportedException("Bytecode 13 is not supported.");
         }
-        byte? bcVersion = Data?.GeneralInfo.BytecodeVersion;
+        byte? bcVersion = Data.GeneralInfo.BytecodeVersion;
         if (bcVersion == 14)
         {
             throw new NotSupportedException("Bytecode 14 is not supported.");
@@ -574,9 +562,8 @@ public abstract class RawMods : ModsBase
         }
         if (!((Data.GMS2_3 == false) && (Data.GMS2_3_1 == false) && (Data.GMS2_3_2 == false)))
         {
-            throw new NotSupportedException(game_name + "is GMS 2.3+ and is ineligible");
+            throw new NotSupportedException("GMS 2.3+ is unsupported");
         }
-
         if (bcVersion != 14 && bcVersion != 15 && bcVersion != 16)
         {
             throw new NotSupportedException("Unknown Bytecode version!");
@@ -652,15 +639,15 @@ public abstract class RawMods : ModsBase
                 var newProductID = new byte[] { 0xBA, 0x5E, 0xBA, 0x11, 0xBA, 0xDD, 0x06, 0x60, 0xBE, 0xEF, 0xED, 0xBA, 0x0B, 0xAB, 0xBA, 0xBE };
                 Data.FORM.EXTN.productIdData.Add(newProductID);
                 Data.Options.Constants.Clear();
-                Data.Options.Constants.Add(new UndertaleOptions.Constant() { Name = Data.Strings.MakeString("@@SleepMargin"), Value = Data.Strings.MakeString(1.ToString()) });
-                Data.Options.Constants.Add(new UndertaleOptions.Constant() { Name = Data.Strings.MakeString("@@DrawColour"), Value = Data.Strings.MakeString(0xFFFFFFFF.ToString()) });
+                Data.Options.Constants.Add(new UndertaleOptions.Constant { Name = Data.Strings.MakeString("@@SleepMargin"), Value = Data.Strings.MakeString(1.ToString()) });
+                Data.Options.Constants.Add(new UndertaleOptions.Constant { Name = Data.Strings.MakeString("@@DrawColour"), Value = Data.Strings.MakeString(0xFFFFFFFF.ToString()) });
             }
             Data.FORM.Chunks["LANG"] = new UndertaleChunkLANG();
             Data.FORM.LANG.Object = new UndertaleLanguage();
             Data.FORM.Chunks["GLOB"] = new UndertaleChunkGLOB();
-            String[] order = { "GEN8", "OPTN", "LANG", "EXTN", "SOND", "AGRP", "SPRT", "BGND", "PATH", "SCPT", "GLOB", "SHDR", "FONT", "TMLN", "OBJT", "ROOM", "DAFL", "TPAG", "CODE", "VARI", "FUNC", "STRG", "TXTR", "AUDO" };
+            string[] order = { "GEN8", "OPTN", "LANG", "EXTN", "SOND", "AGRP", "SPRT", "BGND", "PATH", "SCPT", "GLOB", "SHDR", "FONT", "TMLN", "OBJT", "ROOM", "DAFL", "TPAG", "CODE", "VARI", "FUNC", "STRG", "TXTR", "AUDO" };
             Dictionary<string, UndertaleChunk> newChunks = new Dictionary<string, UndertaleChunk>();
-            foreach (String name in order)
+            foreach (string name in order)
                 newChunks[name] = Data.FORM.Chunks[name];
             Data.FORM.Chunks = newChunks;
             Data.GeneralInfo.BytecodeVersion = 16;
