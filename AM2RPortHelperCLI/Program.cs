@@ -123,9 +123,7 @@ internal static class Program
     }
     private static void RunInteractive()
     {
-        Console.WriteLine("**Before you proceed, make sure to replace the icon.png and splash.png with custom ones if you don't want to have placeholders**");
         Console.WriteLine("THIS TOOL ONLY WORKS FOR MODS BASED ON THE COMMUNITY UPDATES! MODS BASED ON 1.1 WILL NOT WORK!");
-
         
         // Path to zip
         bool invalidZip = true;
@@ -142,6 +140,7 @@ internal static class Program
         } while (invalidZip);
         
         // OS choice
+        bool windowsSelected = false;
         bool linuxSelected = false;
         bool androidSelected = false;
         bool macSelected = false;
@@ -149,23 +148,26 @@ internal static class Program
         do
         {
             Console.WriteLine("Select the platforms you want to port to:");
-            Console.WriteLine($"1 - Linux (currently {(linuxSelected ? "on" : "off")})");
-            Console.WriteLine($"2 - Android (currently {(androidSelected ? "on" : "off")})");
-            Console.WriteLine($"3 - Mac (currently {(macSelected ? "on" : "off")})");
-            Console.WriteLine("4 - Port!");
+            Console.WriteLine($"1 - Windows (currently {(windowsSelected ? "on" : "off")})");
+            Console.WriteLine($"2 - Linux (currently {(linuxSelected ? "on" : "off")})");
+            Console.WriteLine($"3 - Android (currently {(androidSelected ? "on" : "off")})");
+            Console.WriteLine($"4 - Mac (currently {(macSelected ? "on" : "off")})");
+            Console.WriteLine("5 - Port!");
             var input = Console.ReadKey().Key.ToString();
             Console.WriteLine();
 
             switch (input)
             {
-                case "D1": linuxSelected = !linuxSelected; break;
-
-                case "D2": androidSelected = !androidSelected; break;
-
-                case "D3": macSelected = !macSelected; break;
+                case "D1": windowsSelected = !windowsSelected; break;
                 
-                case "D4":
-                    if (linuxSelected || androidSelected || macSelected)
+                case "D2": linuxSelected = !linuxSelected; break;
+
+                case "D3": androidSelected = !androidSelected; break;
+
+                case "D4": macSelected = !macSelected; break;
+                
+                case "D5":
+                    if (windowsSelected || linuxSelected || androidSelected || macSelected)
                         invalidOS = false;
                     else
                         Console.WriteLine("You have to select at least one OS!");
@@ -182,6 +184,10 @@ internal static class Program
         Console.WriteLine("Insert the path to your custom PNG splash. If an empty or nonexistant file is provided, the defaults will be used instead.");
         string splashPath = Console.ReadLine();
         if (String.IsNullOrWhiteSpace(splashPath) || !File.Exists(splashPath)) splashPath = null;
+        
+        // If any of the paths were null, we fix them here to use defaults
+        iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), iconPath);
+        splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), splashPath);
         
         // Port everything
         string currentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
@@ -232,7 +238,8 @@ internal static class Program
             }
             while (customSaveSelected == null);
 
-            RawMods.PortToAndroid(modZipPath, androidPath, iconPath, splashPath, customSaveSelected.Value, customSaveSelected.Value, OutputHandlerDelegate);
+            RawMods.PortToAndroid(modZipPath, androidPath, iconPath, splashPath, customSaveSelected.Value, 
+                                  customSaveSelected.Value, OutputHandlerDelegate);
         }
         if (macSelected)
         {
@@ -248,11 +255,9 @@ internal static class Program
     // We want people to also provide zips that don't end in .zip. If it turns out to not be a zip, it'll still throw later.
     private static bool IsValidInputZip(string path)
     {
-        return path != null && File.Exists(path);
+        return File.Exists(path);
     }
 
-    private static bool IsValidInputZip(FileSystemInfo path)
-    {
-        return IsValidInputZip(path?.FullName);
-    }
+    private static bool IsValidInputZip(FileSystemInfo path) => IsValidInputZip(path?.FullName);
+    
 }
