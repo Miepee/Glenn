@@ -60,7 +60,6 @@ public abstract class RawMods : ModsBase
             {
                 nameof(Resources.icon) + ".png" => Resources.icon,
                 nameof(Resources.splash) + ".png" => Resources.splash,
-                nameof(Resources.splashAndroid) + ".png" => Resources.splashAndroid,
                 _ => throw new InvalidDataException("SubCaseFunction was called with an improper resource!")
             };
 
@@ -79,8 +78,6 @@ public abstract class RawMods : ModsBase
                 return SubCaseFunction(nameof(Resources.icon) + ".png");
             case nameof(Resources.splash):
                 return SubCaseFunction(nameof(Resources.splash) + ".png");
-            case nameof(Resources.splashAndroid):
-                return SubCaseFunction(nameof(Resources.splashAndroid) + ".png");
             default: throw new InvalidDataException(nameOfResource + " is an unknown Icon!");
         }
     }
@@ -286,7 +283,7 @@ public abstract class RawMods : ModsBase
         }
         
         // The wrapper always has a splash image, so we want to overwrite it.
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splashAndroid), pathToSplashScreen), apkAssetsDir + "/splash.png", true);
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), apkAssetsDir + "/splash.png", true);
 
         //recursively lowercase everything in the assets folder
         outputDelegate.SendOutput("Lowercase everything in the assets folder...");

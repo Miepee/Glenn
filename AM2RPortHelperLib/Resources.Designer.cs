@@ -64,15 +64,5 @@ namespace AM2RPortHelperLib {
                 return ((byte[])(obj));
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        public static byte[] splashAndroid {
-            get {
-                object obj = ResourceManager.GetObject("splashAndroid", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
     }
 }
