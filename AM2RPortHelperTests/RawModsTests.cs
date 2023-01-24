@@ -28,19 +28,35 @@ public class RawModsTests : IDisposable
 
     #region GetModOSOfRawZipTests
     
-    [Fact]
-    public void WindowsZipWithDifferentRunnerShouldBeWindows()
+    [Theory]
+    [InlineData("./GameWin.zip", Core.ModOS.Windows)]
+    [InlineData("./GameLin.zip", Core.ModOS.Linux)]
+    [InlineData("./GameMac.zip", Core.ModOS.Mac)]
+    public void OSZipWithGoodRunnerShouldSucceed(string input, Core.ModOS os)
     {
-        var result = RawMods.GetModOSOfRawZip("./GameWin.zip");
-        Assert.True(result == Core.ModOS.Windows);
+        var result = RawMods.GetModOSOfRawZip(input);
+        Assert.True(result == os);
+    }
+
+    [Theory]
+    [InlineData("./GameLin.zip", "/runner")]
+    [InlineData("./GameMac.zip", "/AM2R.app/Contents/MacOS/Mac_Runner")]
+    public void UnixWithWrongRunnerShouldThrow(string input, string runnerSuffix)
+    {
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
+        ZipFile.ExtractToDirectory(input, testTempDir);
+        File.Move(testTempDir + runnerSuffix, testTempDir + runnerSuffix + "_");
+        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
+        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
     }
     
     [Fact]
-    public void WindowsZipWithSameRunnerShouldBeWindows()
+    public void WindowsZipWithDifferentRunnerShouldSucceed()
     {
         var destinationZip = Path.GetTempPath() + Guid.NewGuid() + ".zip";
         ZipFile.ExtractToDirectory("./GameWin.zip", testTempDir);
-        File.Move(testTempDir + "/AM2R Server.exe", testTempDir + "/AM2R.exe");
+        File.Move(testTempDir + "/AM2R.exe", testTempDir + "/Game.exe");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         var result = RawMods.GetModOSOfRawZip(destinationZip);
         Assert.True(result == Core.ModOS.Windows);
@@ -52,76 +68,21 @@ public class RawModsTests : IDisposable
     {
         var destinationZip = Path.GetTempPath() + Guid.NewGuid();
         ZipFile.ExtractToDirectory("./GameWin.zip", testTempDir);
-        File.Copy(testTempDir + "/AM2R Server.exe", testTempDir + "/AM2R.exe");
+        File.Copy(testTempDir + "/AM2R.exe", testTempDir + "/Game.exe");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
         File.Delete(destinationZip);
     }
     
-    [Fact]
-    public void LinuxZipWithGoodRunnerShouldBeLinux()
-    {
-        var result = RawMods.GetModOSOfRawZip("./GameLin.zip");
-        Assert.True(result == Core.ModOS.Linux);
-    }
-    
-    [Fact]
-    public void LinuxZipWithWrongRunnerShouldThrow()
-    {
-        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
-        ZipFile.ExtractToDirectory("./GameLin.zip", testTempDir);
-        File.Move(testTempDir + "/runner", testTempDir + "/AM2R");
-        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
-        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
-        File.Delete(destinationZip);
-    }
-    
-    [Fact]
-    public void MacZipWithGoodRunnerShouldBeMac()
-    {
-        var result = RawMods.GetModOSOfRawZip("./GameMac.zip");
-        Assert.True(result == Core.ModOS.Mac);
-    }
-    
-    [Fact]
-    public void MacZipWithWrongRunnerShouldThrow()
-    {
-        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
-        ZipFile.ExtractToDirectory("./GameMac.zip", testTempDir);
-        File.Move(testTempDir + "/AM2R.app/Contents/MacOS/Mac_Runner", testTempDir + "/AM2R.app/Contents/MacOS/Binary");
-        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
-        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
-        File.Delete(destinationZip);
-    }
-    
-    [Fact]
-    public void WindowsZipWithInvalidDataFileShouldThrow()
+    [Theory]
+    [InlineData("./GameWin.zip", "/data.win")]
+    [InlineData("./GameLin.zip", "/assets/game.unx")]
+    [InlineData("./GameMac.zip", "/AM2R.app/Contents/Resources/game.ios")]
+    public void OSZipWithInvalidDataFileShouldThrow(string input, string dataSuffix)
     {
         var destinationZip = Path.GetTempPath() + Guid.NewGuid() + ".zip";
-        ZipFile.ExtractToDirectory("./GameWin.zip", testTempDir);
-        File.Move(testTempDir + "/data.win", testTempDir + "/data.win_");
-        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
-        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
-        File.Delete(destinationZip);
-    }
-    
-    [Fact]
-    public void LinuxZipWithInvalidDataFileShouldThrow()
-    {
-        var destinationZip = Path.GetTempPath() + Guid.NewGuid() + ".zip";
-        ZipFile.ExtractToDirectory("./GameLin.zip", testTempDir);
-        File.Move(testTempDir + "/assets/game.unx", testTempDir + "/assets/game.unx_");
-        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
-        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
-        File.Delete(destinationZip);
-    }
-    
-    [Fact]
-    public void MacZipWithInvalidDataFileShouldThrow()
-    {
-        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
-        ZipFile.ExtractToDirectory("./GameMac.zip", testTempDir);
-        File.Move(testTempDir + "/AM2R.app/Contents/Resources/game.ios", testTempDir + "//AM2R.app/Contents/Resources/game.ios_");
+        ZipFile.ExtractToDirectory(input, testTempDir);
+        File.Move(testTempDir + dataSuffix, testTempDir + dataSuffix + "_");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
         File.Delete(destinationZip);
@@ -303,7 +264,7 @@ public class RawModsTests : IDisposable
                 // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon,
                 // files being lowered and data file being different
                 var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name.ToLower()).ToList();
-                origFiles.Remove("am2r server.exe");
+                origFiles.Remove("am2r.exe");
                 origFiles.Remove("d3dx9_43.dll");
                 origFiles.Add("splash.png");
                 origFiles.Add("icon.png");
@@ -458,7 +419,7 @@ public class RawModsTests : IDisposable
                 // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon,
                 // files being lowercase, data file being different a new gamecontrollerdb and a new yoyorunner.config
                 var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name.ToLower()).ToList();
-                origFiles.Remove("am2r server.exe");
+                origFiles.Remove("am2r.exe");
                 origFiles.Remove("d3dx9_43.dll");
                 origFiles.Add("splash.png");
                 origFiles.Add("icon.png");
@@ -551,72 +512,57 @@ public class RawModsTests : IDisposable
 
     #region PortInvalidZips
 
-    [Fact]
-    public void PortInvalidZipToWindows()
+    [Theory]
+    [InlineData(Core.ModOS.Windows)]
+    [InlineData(Core.ModOS.Linux)]
+    [InlineData(Core.ModOS.Mac)]
+    public void PortInvalidZipsToOS(Core.ModOS os)
     {
-        Assert.Throws<ArgumentNullException>(() => RawMods.PortToWindows(null, "/foo"));
-        Assert.Throws<FileNotFoundException>(() => RawMods.PortToWindows("/foo", "/foo"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToWindows("./GameLin.zip", null));
+        Action<string?, string?> function = os switch
+        {
+            Core.ModOS.Windows => (input, outputFile) => RawMods.PortToWindows(input, outputFile),
+            Core.ModOS.Linux => (input, outputFile) => RawMods.PortToLinux(input, outputFile),
+            Core.ModOS.Mac => (input, outputFile) => RawMods.PortToMac(input, outputFile),
+            _ => throw new Exception("This should not have happened! new unhandled data!")
+        };
+        
+        Assert.Throws<ArgumentNullException>(() => function.Invoke(null, "/foo"));
+        Assert.Throws<FileNotFoundException>(() => function.Invoke("/foo", "/foo"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => function.Invoke("./GameLin.zip", null));
+
     }
-    
-    [Fact]
-    public void PortInvalidZipToLinux()
-    {
-        Assert.Throws<ArgumentNullException>(() => RawMods.PortToLinux(null, "/foo"));
-        Assert.Throws<FileNotFoundException>(() => RawMods.PortToLinux("/foo", "/foo"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToLinux("./GameLin.zip", null));
-    }
-    
-    [Fact]
-    public void PortInvalidZipToMac()
-    {
-        Assert.Throws<ArgumentNullException>(() => RawMods.PortToMac(null, "/foo"));
-        Assert.Throws<FileNotFoundException>(() => RawMods.PortToMac("/foo", "/foo"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToMac("./GameLin.zip", null));
-    }
-    
     #endregion
 
     #region Make sure porting methods work when called in succession
 
-    [Fact]
-    public void TestPortToWindowsMultipleTimes()
-    {
-        const string input = "./GameLin.zip";
-        string outputZip = testTempDir + "/foobar.zip";
-        RawMods.PortToWindows(input, outputZip);
-        Assert.Throws<IOException>(() => RawMods.PortToWindows(input, outputZip));
-        File.Delete(outputZip);
-        RawMods.PortToWindows(input, outputZip);
-        Assert.True(File.Exists(outputZip));
-    }
-    
-    [Fact]
-    public void TestPortToLinuxMultipleTimes()
-    {
-        const string input = "./GameLin.zip";
-        string outputZip = testTempDir + "/foobar.zip";
-        RawMods.PortToLinux(input, outputZip);
-        Assert.Throws<IOException>(() => RawMods.PortToLinux(input, outputZip));
-        File.Delete(outputZip);
-        RawMods.PortToLinux(input, outputZip);
-        Assert.True(File.Exists(outputZip));
-    }
-    
     [Theory]
-    [InlineData("./GameWin.zip")]
-    [InlineData("./GameLin.zip")]
-    [InlineData("./GameMac.zip")]
-    public void TestPortToMacMultipleTimes(string input)
+    [InlineData("./GameWin.zip", Core.ModOS.Windows)]
+    [InlineData("./GameWin.zip", Core.ModOS.Linux)]
+    [InlineData("./GameWin.zip", Core.ModOS.Mac)]
+    [InlineData("./GameLin.zip", Core.ModOS.Windows)]
+    [InlineData("./GameLin.zip", Core.ModOS.Linux)]
+    [InlineData("./GameLin.zip", Core.ModOS.Mac)]
+    [InlineData("./GameMac.zip", Core.ModOS.Windows)]
+    [InlineData("./GameMac.zip", Core.ModOS.Linux)]
+    [InlineData("./GameMac.zip", Core.ModOS.Mac)]
+    public void TestPortToOSMultipleTimes(string input, Core.ModOS os)
     {
+        Action<string?, string?> function = os switch
+        {
+            Core.ModOS.Windows => (inputFile, outputFile) => RawMods.PortToWindows(inputFile, outputFile),
+            Core.ModOS.Linux => (inputFile, outputFile) => RawMods.PortToLinux(inputFile, outputFile),
+            Core.ModOS.Mac => (inputFile, outputFile) => RawMods.PortToMac(inputFile, outputFile),
+            _ => throw new Exception("This should not have happened! new unhandled data!")
+        };
+        
         string outputZip = testTempDir + "/foobar.zip";
-        RawMods.PortToMac(input, outputZip);
-        Assert.Throws<IOException>(() => RawMods.PortToMac(input, outputZip));
+        function.Invoke(input, outputZip);
+        Assert.Throws<IOException>(() => function.Invoke(input, outputZip));
         File.Delete(outputZip);
-        RawMods.PortToMac(input, outputZip);
+        function.Invoke(input, outputZip);
         Assert.True(File.Exists(outputZip));
     }
-
+    
     #endregion
     
     // TODO: write tests for porttoandroid

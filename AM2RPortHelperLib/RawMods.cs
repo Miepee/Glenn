@@ -108,7 +108,7 @@ public abstract class RawMods : ModsBase
         if (currentOS == ModOS.Windows)
         {
             outputDelegate.SendOutput("Zip is already a raw Windows zip. Copying to output directory...");
-            File.Copy(inputRawZipPath, outputRawZipPath, true);
+            File.Copy(inputRawZipPath, outputRawZipPath);
             return;
         }
         
