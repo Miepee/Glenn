@@ -181,8 +181,7 @@ public class RawModsTests
         Assert.True(File.Exists(newExtract + deepSuffix + origInput));
     }
     #endregion
-
-    // TODO: check that the ports here use the icons we specified
+    
     #region PortToLinux
 
     [Theory]
