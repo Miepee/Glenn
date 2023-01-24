@@ -1,9 +1,6 @@
-using System.Diagnostics;
 using System.IO.Compression;
-using System.Reflection;
 using AM2RPortHelperLib;
 using UndertaleModLib;
-using UndertaleModLib.Decompiler;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,7 +8,7 @@ namespace AM2RPortHelperTests;
 
 public class RawModsTests
 {
-    //TODO: write tests for mac later
+    //TODO: write tests using raw mac zips later
 
     private readonly string testTempDir;
     private readonly string libTempDir = Path.GetTempPath() + "/PortHelper/";
