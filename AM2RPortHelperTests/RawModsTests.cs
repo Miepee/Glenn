@@ -298,11 +298,11 @@ public class RawModsTests
     #region PortToMac
     
     [Theory]
-    [InlineData("./GameWin.zip", false, false)]
-    [InlineData("./GameLin.zip", false, false)]
-    [InlineData("./GameWin.zip", true, true)]
-    [InlineData("./GameLin.zip", true, true)]
-    public void PortZipToMac(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand)
+    [InlineData("./GameWin.zip", false, false, false)]
+    [InlineData("./GameLin.zip", false, false, false)]
+    [InlineData("./GameWin.zip", true, true, true)]
+    [InlineData("./GameLin.zip", true, true, true)]
+    public void PortZipToMac(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand, bool testFontsFolder)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);
         var outputZip = testTempDir + Guid.NewGuid();
@@ -310,17 +310,26 @@ public class RawModsTests
         var newExtract = testTempDir + Guid.NewGuid() + "/";
         var deepSuffix = "Foobar/Foobar/Foo/Blag/";
         var origInput = inputZip;
+
+        if (testFontsFolder)
+        {
+            string assetsDir = "";
+            if (origMod == Core.ModOS.Linux)
+                assetsDir = "assets/";
+            File.Copy(inputZip, testTempDir + inputZip.Replace(testTempDir, "") + "_modified");
+            inputZip = testTempDir + inputZip.Replace(testTempDir, "") + "_modified";
+            using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
+            archive.CreateEntry(assetsDir + "lang/fonts/");
+        }
         
         if (useSubdirectories)
         {
             string archiveDeepSuffix = deepSuffix;
             if (origMod == Core.ModOS.Linux)
-            {
                 archiveDeepSuffix =  "assets/" + deepSuffix;
-            }
             
-            File.Copy(inputZip, testTempDir + inputZip + "_modified");
-            inputZip = testTempDir + inputZip + "_modified";
+            File.Copy(inputZip, testTempDir + inputZip.Replace(testTempDir, "") + "_modified");
+            inputZip = testTempDir + inputZip.Replace(testTempDir, "") + "_modified";
             using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
             archive.CreateEntry(archiveDeepSuffix + origInput);
         }
@@ -385,16 +394,18 @@ public class RawModsTests
         // There should be exactly one subdir here and it should end with .app
         Assert.Single(new DirectoryInfo(newExtract).GetDirectories());
         Assert.EndsWith(".app", new DirectoryInfo(newExtract).GetDirectories().First().Name);
+        Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First(d => d.Name == "English.lproj").Name);
         
-        // If we didn't specify any, there should one more subdirs after that at the end (the English.lproj)
+        // If we didn't specify any, there should two more subdirs after that at the end (the English.lproj, lang)
+        // fonts directory in lang should not exist anymore!
+        
+        Assert.True(new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources/English.lproj").Exists);
+        Assert.False(new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources/lang/fonts").Exists);
+        
         if (!useSubdirectories)
-        {
-            Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First().Name);
             return;
-        }
         
         //Otherwise there should be also stuff
-        Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First(d => d.Name == "English.lproj").Name);
         Assert.True(File.Exists(newExtract + "/" + appDir.Name + "/Contents/Resources/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
     
@@ -456,6 +467,46 @@ public class RawModsTests
         Assert.Throws<ArgumentOutOfRangeException>(() => RawMods.PortToMac("./GameLin.zip", null));
     }
     
+    #endregion
+
+    #region Make sure porting methods work when called in succession
+
+    [Fact]
+    public void TestPortToWindowsMultipleTimes()
+    {
+        const string input = "./GameLin.zip";
+        string outputZip = testTempDir + "/foobar.zip";
+        RawMods.PortToWindows(input, outputZip);
+        Assert.Throws<IOException>(() => RawMods.PortToWindows(input, outputZip));
+        File.Delete(outputZip);
+        RawMods.PortToWindows(input, outputZip);
+        Assert.True(File.Exists(outputZip));
+    }
+    
+    [Fact]
+    public void TestPortToLinuxMultipleTimes()
+    {
+        const string input = "./GameLin.zip";
+        string outputZip = testTempDir + "/foobar.zip";
+        RawMods.PortToLinux(input, outputZip);
+        Assert.Throws<IOException>(() => RawMods.PortToLinux(input, outputZip));
+        File.Delete(outputZip);
+        RawMods.PortToLinux(input, outputZip);
+        Assert.True(File.Exists(outputZip));
+    }
+    
+    [Fact]
+    public void TestPortToMacMultipleTimes()
+    {
+        const string input = "./GameLin.zip";
+        string outputZip = testTempDir + "/foobar.zip";
+        RawMods.PortToMac(input, outputZip);
+        Assert.Throws<IOException>(() => RawMods.PortToMac(input, outputZip));
+        File.Delete(outputZip);
+        RawMods.PortToMac(input, outputZip);
+        Assert.True(File.Exists(outputZip));
+    }
+
     #endregion
     
     // TODO: write tests for porttoandroid
