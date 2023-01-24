@@ -75,9 +75,8 @@ public abstract class RawMods : ModsBase
             string resPath = TempDir + "/" + resource;
             if (File.Exists(resPath))
                 File.Delete(resPath);
-            Image.Load(byteArray).SaveAsPng(resPath);
-            userResourcePath = resPath;
-            return userResourcePath;
+            File.WriteAllBytes(resPath, byteArray);
+            return resPath;
         }
         
         switch (nameOfResource)
