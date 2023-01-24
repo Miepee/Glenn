@@ -266,6 +266,36 @@ public class RawModsTests
         //Otherwise there should be our stuff
         Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
+
+    [Theory]
+    [InlineData("./GameWin.zip")]
+    [InlineData("./GameLin.zip")]
+    public void CheckThatLinuxPortHasProperIcons(string inputZip)
+    {
+        var outputZip = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        
+        // With default icons
+        void CheckIconsWithPath(string? path)
+        {
+            File.Delete(outputZip);
+            RawMods.PortToLinux(inputZip, outputZip, path, path);
+            if (Directory.Exists(newExtract))
+                Directory.Delete(newExtract, true);
+            ZipFile.ExtractToDirectory(outputZip, newExtract);
+            var newIcon = File.ReadAllBytes(newExtract + "/assets/icon.png");
+            var newSplash = File.ReadAllBytes(newExtract + "/assets/splash.png");
+            Directory.CreateDirectory(libTempDir);
+            var oldIcon = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), path));
+            var oldSplash = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), path));
+
+            Assert.True(newIcon.SequenceEqual(oldIcon));
+            Assert.True(newSplash.SequenceEqual(oldSplash));
+        }
+        
+        CheckIconsWithPath(null);
+        CheckIconsWithPath(inputZip);
+    }
     
     #endregion
     
@@ -370,6 +400,36 @@ public class RawModsTests
         //Otherwise there should be also stuff
         Assert.Equal("English.lproj", new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetDirectories().First(d => d.Name == "English.lproj").Name);
         Assert.True(File.Exists(newExtract + "/" + appDir.Name + "/Contents/Resources/" + deepSuffix.ToLower() + origInput.ToLower()));
+    }
+    
+    [Theory]
+    [InlineData("./GameWin.zip")]
+    [InlineData("./GameLin.zip")]
+    public void CheckThatMacPortHasProperIcons(string inputZip)
+    {
+        var outputZip = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        
+        // With default icons
+        void CheckIconsWithPath(string? path)
+        {
+            File.Delete(outputZip);
+            RawMods.PortToMac(inputZip, outputZip, path, path);
+            if (Directory.Exists(newExtract))
+                Directory.Delete(newExtract, true);
+            ZipFile.ExtractToDirectory(outputZip, newExtract);
+            var newIcon = File.ReadAllBytes(newExtract + "/AM2R.app/Contents/Resources/icon.png");
+            var newSplash = File.ReadAllBytes(newExtract + "/AM2R.app/Contents/Resources/splash.png");
+            Directory.CreateDirectory(libTempDir);
+            var oldIcon = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), path));
+            var oldSplash = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), path));
+
+            Assert.True(newIcon.SequenceEqual(oldIcon));
+            Assert.True(newSplash.SequenceEqual(oldSplash));
+        }
+        
+        CheckIconsWithPath(null);
+        CheckIconsWithPath(inputZip);
     }
     
     #endregion

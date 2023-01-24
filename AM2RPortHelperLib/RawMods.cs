@@ -172,22 +172,29 @@ public abstract class RawMods : ModsBase
         
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
-
-        if (currentOS == ModOS.Linux)
-        {
-            outputDelegate.SendOutput("Zip is already a raw Linux zip. Copying to output directory...");
-            File.Copy(inputRawZipPath, outputRawZipPath, true);
-            return;
-        }
-
+        
         string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string assetsDir = extractDirectory + "/assets";
-
+        
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
             Directory.Delete(extractDirectory, true);
         outputDelegate.SendOutput("Extracting for Raw Linux...");
         Directory.CreateDirectory(assetsDir);
+        
+
+        if (currentOS == ModOS.Linux)
+        {
+            ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
+            outputDelegate.SendOutput("Zip is already a raw Linux zip. Checking and replacing icons and splashes...");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png", true);
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png", true);
+            outputDelegate.SendOutput("Creating raw Linux zip...");
+            ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
+            Directory.Delete(TempDir, true);
+            return;
+        }
+        
         ZipFile.ExtractToDirectory(inputRawZipPath, assetsDir);
         
         // Delete unnecessary files, rename data.win, move in the new runner
@@ -448,13 +455,6 @@ public abstract class RawMods : ModsBase
         
         ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
-
-        if (currentOS == ModOS.Mac)
-        {
-            outputDelegate.SendOutput("Zip is already a raw Mac zip. Copying to output dir...");
-            File.Copy(inputRawZipPath, outputRawZipPath, true);
-            return;
-        }
         
         string baseTempDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
         string extractDirectory = baseTempDirectory + "/extract";
@@ -471,6 +471,19 @@ public abstract class RawMods : ModsBase
 
         // Extract mod to temp location
         outputDelegate.SendOutput("Extracting Mac...");
+        
+        if (currentOS == ModOS.Mac)
+        {
+            ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
+            outputDelegate.SendOutput("Zip is already a raw Mac zip. Checking and replacing icons and splashes...");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png", true);
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png", true);
+            outputDelegate.SendOutput("Creating raw Mac zip...");
+            ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
+            Directory.Delete(TempDir, true);
+            return;
+        }
+        
         ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Delete unnecessary files, rename data.win, move in the new runner
