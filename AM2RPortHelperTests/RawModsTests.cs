@@ -68,6 +68,28 @@ public class RawModsTests
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
     }
+    
+    [Fact]
+    public void WindowsZipWithInvalidDataFileShouldThrow()
+    {
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid() + ".zip";
+        ZipFile.ExtractToDirectory("./GameWin.zip", testTempDir);
+        File.Move(testTempDir + "/data.win", testTempDir + "/data.win_");
+        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
+        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+    }
+    
+    [Fact]
+    public void LinuxZipWithInvalidDataFileShouldThrow()
+    {
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid() + ".zip";
+        ZipFile.ExtractToDirectory("./GameLin.zip", testTempDir);
+        File.Move(testTempDir + "/assets/game.unx", testTempDir + "/assets/game.unx_");
+        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
+        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+    }
+    
+    
     #endregion
 
     #region GetProperPathToBuiltinIcons
