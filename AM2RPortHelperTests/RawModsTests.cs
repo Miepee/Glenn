@@ -6,10 +6,8 @@ using Xunit.Abstractions;
 
 namespace AM2RPortHelperTests;
 
-public class RawModsTests
+public class RawModsTests : IDisposable
 {
-    //TODO: write tests using raw mac zips later
-
     private readonly string testTempDir;
     private readonly string libTempDir = Path.GetTempPath() + "/PortHelper/";
     private readonly ITestOutputHelper output;
@@ -20,6 +18,12 @@ public class RawModsTests
         testTempDir = Path.GetTempPath() + Guid.NewGuid() + "/";
         Directory.CreateDirectory(testTempDir);
         this.output = output;
+    }
+
+    public void Dispose()
+    {
+        // Get rid of our test directory to not leave a huge mess
+        Directory.Delete(testTempDir, true);
     }
 
     #region GetModOSOfRawZipTests
@@ -40,6 +44,7 @@ public class RawModsTests
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         var result = RawMods.GetModOSOfRawZip(destinationZip);
         Assert.True(result == Core.ModOS.Windows);
+        File.Delete(destinationZip);
     }
     
     [Fact]
@@ -50,6 +55,7 @@ public class RawModsTests
         File.Copy(testTempDir + "/AM2R Server.exe", testTempDir + "/AM2R.exe");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
     }
     
     [Fact]
@@ -67,6 +73,25 @@ public class RawModsTests
         File.Move(testTempDir + "/runner", testTempDir + "/AM2R");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
+    }
+    
+    [Fact]
+    public void MacZipWithGoodRunnerShouldBeMac()
+    {
+        var result = RawMods.GetModOSOfRawZip("./GameMac.zip");
+        Assert.True(result == Core.ModOS.Mac);
+    }
+    
+    [Fact]
+    public void MacZipWithWrongRunnerShouldThrow()
+    {
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
+        ZipFile.ExtractToDirectory("./GameMac.zip", testTempDir);
+        File.Move(testTempDir + "/AM2R.app/Contents/MacOS/Mac_Runner", testTempDir + "/AM2R.app/Contents/MacOS/Binary");
+        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
+        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
     }
     
     [Fact]
@@ -77,6 +102,7 @@ public class RawModsTests
         File.Move(testTempDir + "/data.win", testTempDir + "/data.win_");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
     }
     
     [Fact]
@@ -87,8 +113,19 @@ public class RawModsTests
         File.Move(testTempDir + "/assets/game.unx", testTempDir + "/assets/game.unx_");
         ZipFile.CreateFromDirectory(testTempDir, destinationZip);
         Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
     }
     
+    [Fact]
+    public void MacZipWithInvalidDataFileShouldThrow()
+    {
+        var destinationZip = Path.GetTempPath() + Guid.NewGuid();
+        ZipFile.ExtractToDirectory("./GameMac.zip", testTempDir);
+        File.Move(testTempDir + "/AM2R.app/Contents/Resources/game.ios", testTempDir + "//AM2R.app/Contents/Resources/game.ios_");
+        ZipFile.CreateFromDirectory(testTempDir, destinationZip);
+        Assert.Throws<NotSupportedException>(() => RawMods.GetModOSOfRawZip(destinationZip));
+        File.Delete(destinationZip);
+    }
     
     #endregion
 
@@ -128,8 +165,10 @@ public class RawModsTests
     [Theory]
     [InlineData("./GameWin.zip", false, false)]
     [InlineData("./GameLin.zip", false, false)]
+    [InlineData("./GameMac.zip", false, false)]
     [InlineData("./GameWin.zip", true, true)]
     [InlineData("./GameLin.zip", true, true)]
+    [InlineData("./GameMac.zip", true, true)]
     public void PortZipToWindows(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);
@@ -143,9 +182,9 @@ public class RawModsTests
         {
             string archiveDeepSuffix = deepSuffix;
             if (origMod == Core.ModOS.Linux)
-            {
-                archiveDeepSuffix =  "assets/" + deepSuffix;
-            }
+                archiveDeepSuffix = "assets/" + deepSuffix;
+            else if (origMod == Core.ModOS.Mac)
+                archiveDeepSuffix = "AM2R.app/Contents/Resources/" + deepSuffix;
             
             File.Copy(inputZip, testTempDir + inputZip + "_modified");
             inputZip = testTempDir + inputZip + "_modified";
@@ -177,12 +216,27 @@ public class RawModsTests
             case Core.ModOS.Linux:
             {
                 // File contents should be same between the zips except for runner missing in original and data file being different
-                List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                var origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 origFiles.Remove("game.unx");
                 origFiles.Add("data.win");
                 origFiles.Add("AM2R.exe");
                 origFiles.Sort();
-                List<string> newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name).ToList();
+                var newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Mac:
+            {
+                // File contents should be the same between the zips except for runner missing in original, data file being different and extra mac files
+                var origFiles = new DirectoryInfo(origExtract + "/AM2R.app/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                origFiles.Remove("game.ios");
+                origFiles.Add("data.win");
+                origFiles.Add("AM2R.exe");
+                origFiles.Remove("gamecontrollerdb.txt");
+                origFiles.Remove("yoyorunner.config");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name).ToList();
                 newFiles.Sort();
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
@@ -206,8 +260,10 @@ public class RawModsTests
     [Theory]
     [InlineData("./GameWin.zip", false, false)]
     [InlineData("./GameLin.zip", false, false)]
+    [InlineData("./GameMac.zip", false, false)]
     [InlineData("./GameWin.zip", true, true)]
     [InlineData("./GameLin.zip", true, true)]
+    [InlineData("./GameMac.zip", true, true)]
     public void PortZipToLinux(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);
@@ -221,9 +277,9 @@ public class RawModsTests
         {
             string archiveDeepSuffix = deepSuffix;
             if (origMod == Core.ModOS.Linux)
-            {
                 archiveDeepSuffix =  "assets/" + deepSuffix.ToLower();
-            }
+            else if (origMod == Core.ModOS.Mac)
+                archiveDeepSuffix = "AM2R.app/Contents/Resources/" + deepSuffix;
             
             File.Copy(inputZip, testTempDir + inputZip.ToLower() + "_modified");
             inputZip = testTempDir + inputZip.ToLower() + "_modified";
@@ -262,9 +318,23 @@ public class RawModsTests
             case Core.ModOS.Linux:
             {
                 // File contents should be same between the zips
-                List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                var origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 origFiles.Sort();
-                List<string> newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Mac:
+            {
+                // File contents should be the same between the zips except for data file being different and extra mac files
+                var origFiles = new DirectoryInfo(origExtract + "/AM2R.app/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                origFiles.Remove("game.ios");
+                origFiles.Add("game.unx");
+                origFiles.Remove("gamecontrollerdb.txt");
+                origFiles.Remove("yoyorunner.config");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 newFiles.Sort();
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
@@ -288,6 +358,7 @@ public class RawModsTests
     [Theory]
     [InlineData("./GameWin.zip")]
     [InlineData("./GameLin.zip")]
+    [InlineData("./GameMac.zip")]
     public void CheckThatLinuxPortHasProperIcons(string inputZip)
     {
         var outputZip = testTempDir + Guid.NewGuid();
@@ -322,8 +393,10 @@ public class RawModsTests
     [Theory]
     [InlineData("./GameWin.zip", false, false, false)]
     [InlineData("./GameLin.zip", false, false, false)]
+    [InlineData("./GameMac.zip", false, false, false)]
     [InlineData("./GameWin.zip", true, true, true)]
     [InlineData("./GameLin.zip", true, true, true)]
+    [InlineData("./GameMac.zip", true, true, true)]
     public void PortZipToMac(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand, bool testFontsFolder)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);
@@ -333,13 +406,14 @@ public class RawModsTests
         var deepSuffix = "Foobar/Foobar/Foo/Blag/";
         var origInput = inputZip;
 
-        if (testFontsFolder)
+        if (testFontsFolder && origMod != Core.ModOS.Mac)
         {
             string assetsDir = "";
             if (origMod == Core.ModOS.Linux)
                 assetsDir = "assets/";
-            File.Copy(inputZip, testTempDir + inputZip.Replace(testTempDir, "") + "_modified");
-            inputZip = testTempDir + inputZip.Replace(testTempDir, "") + "_modified";
+
+            File.Copy(inputZip, testTempDir + inputZip.ToLower().Replace(testTempDir, "") + "_modified");
+            inputZip = testTempDir + inputZip.ToLower().Replace(testTempDir, "") + "_modified";
             using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
             archive.CreateEntry(assetsDir + "lang/fonts/");
         }
@@ -349,11 +423,13 @@ public class RawModsTests
             string archiveDeepSuffix = deepSuffix;
             if (origMod == Core.ModOS.Linux)
                 archiveDeepSuffix =  "assets/" + deepSuffix;
+            else if (origMod == Core.ModOS.Mac)
+                archiveDeepSuffix = "AM2R.app/Contents/Resources/" + deepSuffix.ToLower();
             
             File.Copy(inputZip, testTempDir + inputZip.Replace(testTempDir, "") + "_modified");
             inputZip = testTempDir + inputZip.Replace(testTempDir, "") + "_modified";
             using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
-            archive.CreateEntry(archiveDeepSuffix + origInput);
+            archive.CreateEntry(archiveDeepSuffix + origInput.ToLower());
         }
         
         if (createWorkingDirectoryBeforeHand)
@@ -381,7 +457,6 @@ public class RawModsTests
             {
                 // File contents should be same between the zips except for old runner+d3d.dll, new splash+icon,
                 // files being lowercase, data file being different a new gamecontrollerdb and a new yoyorunner.config
-                
                 var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name.ToLower()).ToList();
                 origFiles.Remove("am2r server.exe");
                 origFiles.Remove("d3dx9_43.dll");
@@ -400,13 +475,23 @@ public class RawModsTests
             case Core.ModOS.Linux:
             {
                 // File contents should be same between the zips except for all files being lowercase, data file being different and mac specific files
-                List<string> origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name.ToLower()).ToList();
+                var origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name.ToLower()).ToList();
                 origFiles.Remove("game.unx");
                 origFiles.Add("game.ios");
                 origFiles.Add("gamecontrollerdb.txt");
                 origFiles.Add("yoyorunner.config");
                 origFiles.Sort();
-                List<string> newFiles = new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                var newFiles = new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Mac:
+            {
+                // File contents should be same between the zips
+                var origFiles = new DirectoryInfo(origExtract + "/" + appDir.Name + "/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract + "/" + appDir.Name + "/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
                 newFiles.Sort();
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
@@ -427,13 +512,14 @@ public class RawModsTests
         if (!useSubdirectories)
             return;
         
-        //Otherwise there should be also stuff
+        // Otherwise there should be also our stuff
         Assert.True(File.Exists(newExtract + "/" + appDir.Name + "/Contents/Resources/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
     
     [Theory]
     [InlineData("./GameWin.zip")]
     [InlineData("./GameLin.zip")]
+    [InlineData("./GameMac.zip")]
     public void CheckThatMacPortHasProperIcons(string inputZip)
     {
         var outputZip = testTempDir + Guid.NewGuid();
@@ -517,10 +603,12 @@ public class RawModsTests
         Assert.True(File.Exists(outputZip));
     }
     
-    [Fact]
-    public void TestPortToMacMultipleTimes()
+    [Theory]
+    [InlineData("./GameWin.zip")]
+    [InlineData("./GameLin.zip")]
+    [InlineData("./GameMac.zip")]
+    public void TestPortToMacMultipleTimes(string input)
     {
-        const string input = "./GameLin.zip";
         string outputZip = testTempDir + "/foobar.zip";
         RawMods.PortToMac(input, outputZip);
         Assert.Throws<IOException>(() => RawMods.PortToMac(input, outputZip));

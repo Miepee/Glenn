@@ -182,7 +182,7 @@ public abstract class RawMods : ModsBase
         outputDelegate.SendOutput("Extracting for Raw Linux...");
         Directory.CreateDirectory(assetsDir);
         
-
+        // Zip is linux, so just overwrite the icons/splashes
         if (currentOS == ModOS.Linux)
         {
             ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
@@ -220,8 +220,8 @@ public abstract class RawMods : ModsBase
         }
         
         File.Copy(UtilDir + "/runner", extractDirectory + "/runner");
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png");
-        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png");
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png", true);
+        File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png", true);
 
         //recursively lowercase everything in the assets folder
         outputDelegate.SendOutput("Lowercase everything in the assets folder...");
@@ -465,25 +465,29 @@ public abstract class RawMods : ModsBase
         // Check if temp folder exists, delete if yes, copy bare runner to there
         if (Directory.Exists(baseTempDirectory))
             Directory.Delete(baseTempDirectory, true);
+        
+        // Zip is Mac, so just overwrite the icons/splashes
+        if (currentOS == ModOS.Mac)
+        {
+            // Assign variables differently since we already have a working version
+            contentsDir = appDirectory + "/Contents";
+            assetsDir = contentsDir + "/Resources";
+            ZipFile.ExtractToDirectory(inputRawZipPath, baseTempDirectory);
+            outputDelegate.SendOutput("Zip is already a raw Mac zip. Checking and replacing icons and splashes...");
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png", true);
+            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png", true);
+            outputDelegate.SendOutput("Creating raw Mac zip...");
+            ZipFile.CreateFromDirectory(baseTempDirectory, outputRawZipPath);
+            Directory.Delete(TempDir, true);
+            return;
+        }
+        
         outputDelegate.SendOutput("Copying Mac Runner...");
         Directory.CreateDirectory(contentsDir);
         HelperMethods.DirectoryCopy(UtilDir + "/Contents", contentsDir);
 
         // Extract mod to temp location
         outputDelegate.SendOutput("Extracting Mac...");
-        
-        if (currentOS == ModOS.Mac)
-        {
-            ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
-            outputDelegate.SendOutput("Zip is already a raw Mac zip. Checking and replacing icons and splashes...");
-            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.icon), pathToIcon), assetsDir + "/icon.png", true);
-            File.Copy(GetProperPathToBuiltinIcons(nameof(Resources.splash), pathToSplashScreen), assetsDir + "/splash.png", true);
-            outputDelegate.SendOutput("Creating raw Mac zip...");
-            ZipFile.CreateFromDirectory(extractDirectory, outputRawZipPath);
-            Directory.Delete(TempDir, true);
-            return;
-        }
-        
         ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
 
         // Delete unnecessary files, rename data.win, move in the new runner
