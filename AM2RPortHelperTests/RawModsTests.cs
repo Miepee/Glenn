@@ -176,11 +176,12 @@ public class RawModsTests : IDisposable
             }
             case Core.ModOS.Linux:
             {
-                // File contents should be same between the zips except for runner missing in original and data file being different
+                // File contents should be same between the zips except for runner+d3d.dll missing in original and data file being different
                 var origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
                 origFiles.Remove("game.unx");
                 origFiles.Add("data.win");
                 origFiles.Add("AM2R.exe");
+                origFiles.Add("D3DX9_43.dll");
                 origFiles.Sort();
                 var newFiles = new DirectoryInfo(newExtract).GetFiles().Select(f => f.Name).ToList();
                 newFiles.Sort();
@@ -189,11 +190,12 @@ public class RawModsTests : IDisposable
             }
             case Core.ModOS.Mac:
             {
-                // File contents should be the same between the zips except for runner missing in original, data file being different and extra mac files
+                // File contents should be the same between the zips except for runner+d3d.dll missing in original, data file being different and extra mac files
                 var origFiles = new DirectoryInfo(origExtract + "/AM2R.app/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
                 origFiles.Remove("game.ios");
                 origFiles.Add("data.win");
                 origFiles.Add("AM2R.exe");
+                origFiles.Add("D3DX9_43.dll");
                 origFiles.Remove("gamecontrollerdb.txt");
                 origFiles.Remove("yoyorunner.config");
                 origFiles.Sort();

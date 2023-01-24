@@ -38,7 +38,6 @@ public abstract class RawMods : ModsBase
         if (exeList.Count == 1 && !exeList[0].FullName.Contains('/') && archive.Entries.Any(f => f.FullName == "data.win"))
             return ModOS.Windows;
         
-        //TODO: any uppercase files should be invalid!
         if (archive.Entries.Any(f => f.FullName == "runner") && archive.Entries.Any(f => f.FullName == "assets/game.unx"))
             return ModOS.Linux;
         
@@ -143,8 +142,8 @@ public abstract class RawMods : ModsBase
             default: throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported.");
         }
         
-        // TODO: is missing the d3dx9_dll
         File.Copy(UtilDir + "/executable.exe", extractDirectory + "/AM2R.exe");
+        File.Copy(UtilDir + "/D3DX9_43.dll", extractDirectory + "/D3DX9_43.dll");
 
         //zip the result
         outputDelegate.SendOutput("Creating raw Windows zip...");
