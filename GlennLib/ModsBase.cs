@@ -14,8 +14,15 @@ public abstract class ModsBase
     /// <summary>
     /// A temporary directory
     /// </summary>
-    protected static readonly string TempDir = Path.GetTempPath() + "/PortHelper/";
-    
+    protected static string TempDir => CreateAndReturnTempPath();
+
+    private static string CreateAndReturnTempPath()
+    {
+        string path = Path.GetTempPath() + "/GlennPortHelper/";
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
     /// <summary>
     /// The current directory of the program.
     /// </summary>

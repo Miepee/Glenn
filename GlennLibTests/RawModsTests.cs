@@ -9,7 +9,7 @@ namespace GlennLibTests;
 public class RawModsTests : IDisposable
 {
     private readonly string testTempDir;
-    private readonly string libTempDir = Path.GetTempPath() + "/PortHelper/";
+    private readonly string libTempDir = Path.GetTempPath() + "/GlennPortHelper/";
     private readonly ITestOutputHelper output;
     
     public RawModsTests(ITestOutputHelper output)
