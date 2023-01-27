@@ -14,14 +14,14 @@ jobs:
         configuration: [Release]
         include:
           - os: ubuntu-latest
-            COMMAND: AM2RPortHelperCLI.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r linux-x64 --no-self-contained
-            ARTIFACT: AM2RPortHelperCLI/bin/Release/net6.0/linux-x64/publish/
+            COMMAND: GlennCLI.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r linux-x64 --no-self-contained
+            ARTIFACT: GlennCLI/bin/Release/net6.0/linux-x64/publish/
           - os: macOS-latest
-            COMMAND: AM2RPortHelperCLI.csproj -r osx-x64 --no-self-contained
-            ARTIFACT: AM2RPortHelperCLI/bin/Release/net6.0/osx-x64/publish
+            COMMAND: GlennCLI.csproj -r osx-x64 --no-self-contained
+            ARTIFACT: GlennCLI/bin/Release/net6.0/osx-x64/publish
           - os: windows-latest
-            COMMAND: AM2RPortHelperCLI.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
-            ARTIFACT: AM2RPortHelperCLI\bin\Release\net6.0\win-x86\publish
+            COMMAND: GlennCLI.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
+            ARTIFACT: GlennCLI\bin\Release\net6.0\win-x86\publish
     runs-on: ${{ matrix.os }}
     
 
@@ -34,10 +34,10 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./AM2RPortHelperCLI
+      working-directory: ./GlennCLI
       run: dotnet restore
     - name: Build
-      working-directory: ./AM2RPortHelperCLI
+      working-directory: ./GlennCLI
       run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}" /p:WarningLevel=3
     # Steps for uploading artifacts.
     - name: Zip to Archive
@@ -56,17 +56,17 @@ jobs:
         configuration: [Release]
         include:
           - os: ubuntu-latest
-            COMMAND: AM2RPortHelperGUI.Gtk.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r linux-x64 --no-self-contained
-            ARTIFACT: AM2RPortHelperGUI.Gtk/bin/Release/net6.0/linux-x64/publish/
-            DIR: AM2RPortHelperGUI.Gtk
+            COMMAND: GlennGUI.Gtk.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r linux-x64 --no-self-contained
+            ARTIFACT: GlennGUI.Gtk/bin/Release/net6.0/linux-x64/publish/
+            DIR: GlennGUI.Gtk
           - os: macOS-latest
-            COMMAND: AM2RPortHelperGUI.Mac.csproj -r osx-x64 --no-self-contained
-            ARTIFACT: AM2RPortHelperGUI.Mac/bin/Release/net6.0/osx-x64/publish
-            DIR: AM2RPortHelperGUI.Mac
+            COMMAND: GlennGUI.Mac.csproj -r osx-x64 --self-contained
+            ARTIFACT: GlennGUI.Mac/bin/Release/net6.0/osx-x64/publish
+            DIR: GlennGUI.Mac
           - os: windows-latest
-            COMMAND: AM2RPortHelperGUI.Wpf.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
-            ARTIFACT: AM2RPortHelperGUI.Wpf\bin\Release\net6.0-windows\win-x86\publish
-            DIR: AM2RPortHelperGUI.Wpf
+            COMMAND: GlennGUI.Wpf.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
+            ARTIFACT: GlennGUI.Wpf\bin\Release\net6.0-windows\win-x86\publish
+            DIR: GlennGUI.Wpf
     runs-on: ${{ matrix.os }}
     
 
@@ -79,14 +79,14 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./AM2RPortHelperGUI/${{ matrix.DIR }}
+      working-directory: ./GlennGUI/${{ matrix.DIR }}
       run: dotnet restore
     - name: Build
-      working-directory: ./AM2RPortHelperGUI/${{ matrix.DIR }}
+      working-directory: ./GlennGUI/${{ matrix.DIR }}
       run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}" /p:WarningLevel=3
     # Steps for uploading artifacts.
     - name: Zip to Archive
-      run: 7z a -tzip ${{ matrix.os }}.zip ./AM2RPortHelperGUI/${{ matrix.ARTIFACT }}
+      run: 7z a -tzip ${{ matrix.os }}.zip ./GlennGUI/${{ matrix.ARTIFACT }}
     - name: Upload Artifacts
       uses: actions/upload-artifact@v1.0.0
       with:
@@ -105,7 +105,7 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./AM2RPortHelperTests/
+      working-directory: ./GlennLibTests/
       run: dotnet restore
     - name: Test
       run: dotnet test
