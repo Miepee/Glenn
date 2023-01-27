@@ -3,21 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31613.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperCLI", "AM2RPortHelperCLI\AM2RPortHelperCLI.csproj", "{A630476D-8D81-4178-A742-529ADC1B3E97}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennCLI", "GlennCLI\GlennCLI.csproj", "{A630476D-8D81-4178-A742-529ADC1B3E97}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperLib", "AM2RPortHelperLib\AM2RPortHelperLib.csproj", "{FB200270-51C9-45FC-BF9C-E9006576D00A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennLib", "GlennLib\GlennLib.csproj", "{FB200270-51C9-45FC-BF9C-E9006576D00A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI", "AM2RPortHelperGUI\AM2RPortHelperGUI\AM2RPortHelperGUI.csproj", "{A803417B-9A25-4166-820F-6089D7EE84A9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennGUI", "GlennGUI\GlennGUI\GlennGUI.csproj", "{A803417B-9A25-4166-820F-6089D7EE84A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Gtk", "AM2RPortHelperGUI\AM2RPortHelperGUI.Gtk\AM2RPortHelperGUI.Gtk.csproj", "{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennGUI.Gtk", "GlennGUI\GlennGUI.Gtk\GlennGUI.Gtk.csproj", "{05041346-DD3B-40BB-AA1B-3D69B4DD2ADA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Mac", "AM2RPortHelperGUI\AM2RPortHelperGUI.Mac\AM2RPortHelperGUI.Mac.csproj", "{21D15228-8BC7-41DB-8913-74AE82566712}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennGUI.Mac", "GlennGUI\GlennGUI.Mac\GlennGUI.Mac.csproj", "{21D15228-8BC7-41DB-8913-74AE82566712}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperGUI.Wpf", "AM2RPortHelperGUI\AM2RPortHelperGUI.Wpf\AM2RPortHelperGUI.Wpf.csproj", "{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennGUI.Wpf", "GlennGUI\GlennGUI.Wpf\GlennGUI.Wpf.csproj", "{4C4043B0-38AB-479A-A4B3-D3F7F39092F0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModLib", "UndertaleModTool\UndertaleModLib\UndertaleModLib.csproj", "{F402FD71-4FF4-4E2E-ADCD-A45FBDAFD713}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AM2RPortHelperTests", "AM2RPortHelperTests\AM2RPortHelperTests.csproj", "{716D3686-423D-4618-8769-03982463AD04}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlennLibTests", "GlennLibTests\GlennLibTests.csproj", "{716D3686-423D-4618-8769-03982463AD04}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

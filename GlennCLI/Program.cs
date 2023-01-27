@@ -2,9 +2,9 @@
 using System.CommandLine;
 using System.IO;
 using System.Threading.Tasks;
-using AM2RPortHelperLib;
+using GlennLib;
 
-namespace AM2RPortHelper;
+namespace GlennCLI;
 
 
 internal static class Program
@@ -71,7 +71,7 @@ internal static class Program
 #pragma warning restore CS1998
     {
         if (interactive || beVerbose)
-            Console.WriteLine("AM2RPortHelperCLI v" + Core.Version);
+            Console.WriteLine("GlennCLI v" + Core.Version);
         
         if (interactive)
         {

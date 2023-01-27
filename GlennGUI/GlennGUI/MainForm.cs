@@ -3,11 +3,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using AM2RPortHelperLib;
+using GlennLib;
 using Eto.Forms;
 using Eto.Drawing;
 
-namespace AM2RPortHelperGUI;
+namespace GlennGUI;
 
 public partial class MainForm : Form
 
@@ -31,7 +31,7 @@ public partial class MainForm : Form
     
     public MainForm()
     {
-        Title = $"AM2RPortHelper - v{Core.Version}";
+        Title = $"Glenn - v{Core.Version}";
         MinimumSize = new Size(260, 280);
         
         var mainLayout = new DynamicLayout() {Padding = 10};

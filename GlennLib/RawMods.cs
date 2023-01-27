@@ -7,9 +7,9 @@ using SixLabors.ImageSharp;
 using UndertaleModLib;
 using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
-using static AM2RPortHelperLib.Core;
+using static GlennLib.Core;
 
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 // TODO: rebrand
 
@@ -22,9 +22,9 @@ public abstract class RawMods : ModsBase
     /// Determines for which OS a raw mod zip was made for. 
     /// </summary>
     /// <param name="inputRawZipPath">The path to the raw mod zip.</param>
-    /// <returns>The OS for which the zip was made for as <see cref="ModOS"/>.</returns>
+    /// <returns>The OS for which the zip was made for as <see cref="Core.ModOS"/>.</returns>
     /// <exception cref="NotSupportedException">The OS for which the zip was made for could not be determined.</exception>
-    public static ModOS GetModOSOfRawZip(string inputRawZipPath)
+    public static Core.ModOS GetModOSOfRawZip(string inputRawZipPath)
     {
         if (inputRawZipPath is null)
             throw new ArgumentNullException(nameof(inputRawZipPath) + " cannot be null!");
@@ -36,16 +36,16 @@ public abstract class RawMods : ModsBase
         // Since exe's can be differently named, we'll search for exactly one exe in no subdirectories.
         var exeList = archive.Entries.Where(f => f.FullName.EndsWith(".exe")).ToList();
         if (exeList.Count == 1 && !exeList[0].FullName.Contains('/') && archive.Entries.Any(f => f.FullName == "data.win"))
-            return ModOS.Windows;
+            return Core.ModOS.Windows;
         
         if (archive.Entries.Any(f => f.FullName == "runner") && archive.Entries.Any(f => f.FullName == "assets/game.unx"))
-            return ModOS.Linux;
+            return Core.ModOS.Linux;
         
         // I probably *should* use fullpaths for these, but the .app file could technically be different and don't want to thinka bout how to circumvent it
         if (archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/MacOS/Mac_Runner")) && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Resources/game.ios"))
             && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Info.plist")) && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/PkgInfo"))
             && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Frameworks/libYoYoGamepad.dylib")) && archive.Entries.Any(f => f.FullName.EndsWith(".app/Contents/Frameworks/libYoYoIAP.dylib")))
-            return ModOS.Mac;
+            return Core.ModOS.Mac;
         
         throw new NotSupportedException("The OS of the mod zip is unknown and thus not supported");
     }
@@ -100,10 +100,10 @@ public abstract class RawMods : ModsBase
     {
         CheckIfOutputPathIsNull(outputRawZipPath);
         
-        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
 
-        if (currentOS == ModOS.Windows)
+        if (currentOS == Core.ModOS.Windows)
         {
             outputDelegate.SendOutput("Zip is already a raw Windows zip. Copying to output directory...");
             File.Copy(inputRawZipPath, outputRawZipPath);
@@ -123,13 +123,13 @@ public abstract class RawMods : ModsBase
         outputDelegate.SendOutput("Delete unnecessary files for Windows...");
         switch (currentOS)
         {
-            case ModOS.Linux:
+            case Core.ModOS.Linux:
                 File.Delete(extractDirectory + "/runner");
                 HelperMethods.DirectoryCopy(extractDirectory + "/assets", extractDirectory);
                 Directory.Delete(extractDirectory + "/assets", true);
                 File.Move(extractDirectory + "/game.unx", extractDirectory + "/data.win");
                 break;
-            case ModOS.Mac:
+            case Core.ModOS.Mac:
                 var appDir = new DirectoryInfo(extractDirectory).GetDirectories().First(n => n.Name.EndsWith(".app"));
                 HelperMethods.DirectoryCopy(extractDirectory + "/" + appDir.Name + "/Contents/Resources", extractDirectory);
                 File.Delete(extractDirectory + "/gamecontrollerdb.txt");
@@ -168,7 +168,7 @@ public abstract class RawMods : ModsBase
     {
         CheckIfOutputPathIsNull(outputRawZipPath);
         
-        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
         string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
@@ -181,7 +181,7 @@ public abstract class RawMods : ModsBase
         Directory.CreateDirectory(assetsDir);
         
         // Zip is linux, so just overwrite the icons/splashes
-        if (currentOS == ModOS.Linux)
+        if (currentOS == Core.ModOS.Linux)
         {
             ZipFile.ExtractToDirectory(inputRawZipPath, extractDirectory);
             outputDelegate.SendOutput("Zip is already a raw Linux zip. Checking and replacing icons and splashes...");
@@ -199,13 +199,13 @@ public abstract class RawMods : ModsBase
         outputDelegate.SendOutput("Delete unnecessary files for Linux...");
         switch (currentOS)
         {
-            case ModOS.Windows:
+            case Core.ModOS.Windows:
                 var exeFile = new DirectoryInfo(assetsDir).GetFiles().First(f => f.Name.EndsWith(".exe"));
                 exeFile.Delete();
                 File.Delete(assetsDir + "/D3DX9_43.dll");
                 File.Move(assetsDir + "/data.win", assetsDir + "/game.unx");
                 break;
-            case ModOS.Mac:
+            case Core.ModOS.Mac:
                 var appDir = new DirectoryInfo(assetsDir).GetDirectories().First(n => n.Name.EndsWith(".app"));
                 HelperMethods.DirectoryCopy(assetsDir + "/" + appDir.Name + "/Contents/Resources", assetsDir);
                 File.Delete(assetsDir + "/gamecontrollerdb.txt");
@@ -252,7 +252,7 @@ public abstract class RawMods : ModsBase
     {
         CheckIfOutputPathIsNull(outputRawApkPath);
         
-        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
         string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
@@ -288,19 +288,19 @@ public abstract class RawMods : ModsBase
         outputDelegate.SendOutput("Delete unnecessary files for Android...");
         switch (currentOS)
         {
-            case ModOS.Windows:
+            case Core.ModOS.Windows:
                 var exeFile = new DirectoryInfo(apkAssetsDir).GetFiles().First(f => f.Name.EndsWith(".exe"));
                 exeFile.Delete();
                 File.Delete(apkAssetsDir + "/D3DX9_43.dll");
                 File.Move(apkAssetsDir + "/data.win", apkAssetsDir + "/game.droid");
                 break;
-            case ModOS.Linux:
+            case Core.ModOS.Linux:
                 File.Delete(apkAssetsDir + "/runner");
                 HelperMethods.DirectoryCopy(apkAssetsDir + "/assets", apkAssetsDir);
                 Directory.Delete(apkAssetsDir + "/assets", true);
                 File.Move(apkAssetsDir + "/game.unx", apkAssetsDir + "/game.droid");
                 break;
-            case ModOS.Mac:
+            case Core.ModOS.Mac:
                 var appDir = new DirectoryInfo(apkAssetsDir).GetDirectories().First(n => n.Name.EndsWith(".app"));
                 HelperMethods.DirectoryCopy(apkAssetsDir + "/" + appDir.Name + "/Contents/Resources", apkAssetsDir);
                 File.Delete(apkAssetsDir + "/gamecontrollerdb.txt");
@@ -451,7 +451,7 @@ public abstract class RawMods : ModsBase
     {
         CheckIfOutputPathIsNull(outputRawZipPath);
         
-        ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
+        Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
         string baseTempDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
@@ -465,7 +465,7 @@ public abstract class RawMods : ModsBase
             Directory.Delete(baseTempDirectory, true);
         
         // Zip is Mac, so just overwrite the icons/splashes
-        if (currentOS == ModOS.Mac)
+        if (currentOS == Core.ModOS.Mac)
         {
             // Assign variables differently since we already have a working version
             contentsDir = appDirectory + "/Contents";
@@ -492,13 +492,13 @@ public abstract class RawMods : ModsBase
         outputDelegate.SendOutput("Delete unnecessary files for Mac...");
         switch (currentOS)
         {
-            case ModOS.Windows:
+            case Core.ModOS.Windows:
                 var exeFile = new DirectoryInfo(extractDirectory).GetFiles().First(f => f.Name.EndsWith(".exe"));
                 exeFile.Delete();
                 File.Delete(extractDirectory + "/D3DX9_43.dll");
                 File.Move(extractDirectory + "/data.win", extractDirectory + "/game.ios");
                 break;
-            case ModOS.Linux:
+            case Core.ModOS.Linux:
                 File.Delete(extractDirectory + "/runner");
                 HelperMethods.DirectoryCopy(extractDirectory + "/assets", extractDirectory);
                 Directory.Delete(extractDirectory + "/assets", true);

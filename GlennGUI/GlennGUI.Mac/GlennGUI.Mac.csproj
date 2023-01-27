@@ -6,14 +6,15 @@
         <RollForward>LatestMajor</RollForward>
 
         <RuntimeIdentifiers>osx-x64;osx-arm64</RuntimeIdentifiers>
+
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AM2RPortHelperGUI\AM2RPortHelperGUI.csproj"/>
+        <ProjectReference Include="..\GlennGUI\GlennGUI.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Eto.Platform.Mac64" Version="2.7.0"/>
+        <PackageReference Include="Eto.Platform.Mac64" Version="2.7.0" />
     </ItemGroup>
 
 </Project>

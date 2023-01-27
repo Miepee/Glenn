@@ -1,4 +1,4 @@
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 public static class Core
 {
@@ -15,7 +15,7 @@ public static class Core
     public static readonly string ConfigDir = ReturnAndCreateConfigDir();
     
     /// <summary>
-    /// The current version of <see cref="AM2RPortHelperLib"/>.
+    /// The current version of <see cref="GlennLib"/>.
     /// </summary>
     public const string Version = "1.4";
 

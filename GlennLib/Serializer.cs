@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 /// <summary>
 /// The <c>Serializer</c> class, that serializes to and deserializes from XML files.

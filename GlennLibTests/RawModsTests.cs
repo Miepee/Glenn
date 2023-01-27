@@ -1,12 +1,10 @@
-using System.Diagnostics;
 using System.IO.Compression;
-using System.Runtime.InteropServices;
-using AM2RPortHelperLib;
+using GlennLib;
 using UndertaleModLib;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace AM2RPortHelperTests;
+namespace GlennLibTests;
 
 public class RawModsTests : IDisposable
 {

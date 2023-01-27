@@ -1,6 +1,6 @@
 ﻿using System.Xml.Serialization;
 
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 /// <summary>
 /// Class that handles how the mod settings are saved as XML.

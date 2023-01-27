@@ -1,4 +1,4 @@
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 public abstract class ModsBase
 {
@@ -17,12 +17,12 @@ public abstract class ModsBase
     protected static readonly string TempDir = Path.GetTempPath() + "/PortHelper/";
     
     /// <summary>
-    /// The current directory of the AM2RPortHelper program.
+    /// The current directory of the program.
     /// </summary>
     protected static readonly string CurrentDir = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
     
     /// <summary>
-    /// The "utils" folder that's shipped with the AM2RPortHelper.
+    /// The "utils" folder that's shipped with the tool.
     /// </summary>
     protected static readonly string UtilDir = CurrentDir + "/utils";
 }

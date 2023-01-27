@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 public static class HelperMethods
 {

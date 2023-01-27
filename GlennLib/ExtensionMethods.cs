@@ -1,4 +1,4 @@
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 public static class ExtensionMethods
 {

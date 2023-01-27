@@ -3,9 +3,9 @@
 <plist version="1.0">
   <dict>
     <key>CFBundleName</key>
-    <string>AM2RPortHelperGUI</string>
+    <string>Glenn</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.AM2RPortHelperGUI</string>
+    <string>com.example.Glenn</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
     <key>LSMinimumSystemVersion</key>

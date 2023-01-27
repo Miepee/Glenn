@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\AM2RPortHelperLib\AM2RPortHelperLib.csproj" />
+      <ProjectReference Include="..\..\GlennLib\GlennLib.csproj" />
     </ItemGroup>
 
 </Project>

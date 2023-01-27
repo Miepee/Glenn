@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace AM2RPortHelperLib;
+namespace GlennLib;
 
 public abstract class LauncherMods : ModsBase
 {

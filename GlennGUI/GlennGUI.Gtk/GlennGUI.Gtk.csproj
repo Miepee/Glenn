@@ -3,15 +3,15 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <RollForward>LatestMajor</RollForward>
-        <TargetFramework>net6.0-windows</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AM2RPortHelperGUI\AM2RPortHelperGUI.csproj"/>
+        <ProjectReference Include="..\GlennGUI\GlennGUI.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Eto.Platform.Wpf" Version="2.7.0"/>
+        <PackageReference Include="Eto.Platform.Gtk" Version="2.7.0" />
     </ItemGroup>
 
 </Project>
