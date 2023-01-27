@@ -34,7 +34,8 @@ public partial class MainForm : Form
     {
         Title = $"Glenn - v{Core.Version}";
         MinimumSize = new Size(260, 280);
-        
+
+        Icon = new Icon(1f, new Bitmap(Resources.applicationIcon));
         
         var mainLayout = new DynamicLayout() {Padding = 10};
         mainLayout.BeginVertical();
