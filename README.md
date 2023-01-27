@@ -1,10 +1,10 @@
-# AM2RPortHelper
-A simple tool to make porting Windows builds of self-created AM2R-Mods to other platforms easier. This will *only* work with VM-mods of the Community Updates, neither YYC mods nor mods of the original 1.1 will work.  
+# Glenn
+Glenn is a tool to make porting builds of self-created AM2R Mods to other platforms easier. This will *only* work with VM-mods of the Community Updates, neither YYC mods nor mods of the original AM2R 1.1 will work.  
 You need to have at least .NET Core 6 installed in order to run this.
  
 ## How do I use this?
-First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created, if you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just feed it into this tool and, select if you want to have a port made for Linux, Android or Mac.  
-It will then create a new zip/apk, which can be used for the [AM2RModPacker](https://github.com/AM2R-Community-Developers/AM2RModpacker-Mac), in the directory next to the program. For the Mac build, you need to use my ModPacker-Mac version which can be found [here](https://github.com/AM2R-Community-Developers/AM2RModpacker-Mac).
+First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created. If you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just feed it into this tool and, select if you want to have a port made for Linux, Android or Mac.  
+It will then create a new zip/apk in the directory next to the program, which can be used for [Atomic](https://github.com/AM2R-Community-Developers/Atomic).  
 
 To create Android builds, you need to have Java installed.
 
@@ -21,9 +21,6 @@ By default, the ports will use stock splash and icon images. *It is recommended 
 ### Mac
 -  The following functions will crash the game if you'll use them:
    - `immersion_play_effect` and `immersion_stop`, `font_replace`. Make sure to either create an OS check before using those, or don't use them entirely. ***AM2R uses these by default, make sure to remove them or create an OS check!***
-- If you use a custom save directory that's *not* inside of `%localappdata%/AM2R`, but instead in `%localappdata%/MyModWithCoolName` you have to change `com.yoyogames.am2r` to `com.yoyogames.mymodwithcoolname` (needs to be all lowercase) in the following files:
-    * `utils/Contents/Info.plist`, .
-    * `utils/Contents/Resources/yoyorunner.config`
 
 ### Android
-- If you use a custom save directory that's *not* inside of `%localappdata%/AM2R`, but instead in `%localappdata%/MyModWithCoolName` you have to change all instances of `com.companyname.AM2RWrapper` to `com.companyname.MyModWithCoolName` in the `AndroidManifest.xml` inside of the `AM2RWrapper.apk`. For this you have to decompile the apk with apktool (`java -jar apktool.jar d AM2RWrapper.apk`), edit the contents, and then rebuild it  (`java -jar b apktool.jar b AM2RWrapper`) and sign it (`java -jar uber-apk-signer.jar -a theNewApk.apk`).
+- Due to Android being extremely sandboxed, users are unable to get files if you save something to `working_directory`.
