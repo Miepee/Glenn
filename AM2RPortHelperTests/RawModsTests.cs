@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using AM2RPortHelperLib;
 using UndertaleModLib;
 using Xunit;
@@ -204,6 +206,7 @@ public class RawModsTests : IDisposable
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
             }
+            default: throw new Exception("unwritten test case for new os?");
         }
         
         // If we didn't specify any, there should be no subdirectories at the end
@@ -302,6 +305,7 @@ public class RawModsTests : IDisposable
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
             }
+            default: throw new Exception("unwritten test case for new os?");
         }
         
         // There should be exactly one subdir here
@@ -316,37 +320,6 @@ public class RawModsTests : IDisposable
         
         //Otherwise there should be our stuff
         Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix.ToLower() + origInput.ToLower()));
-    }
-
-    [Theory]
-    [InlineData("./GameWin.zip")]
-    [InlineData("./GameLin.zip")]
-    [InlineData("./GameMac.zip")]
-    public void CheckThatLinuxPortHasProperIcons(string inputZip)
-    {
-        var outputZip = testTempDir + Guid.NewGuid();
-        var newExtract = testTempDir + Guid.NewGuid() + "/";
-        
-        // With default icons
-        void CheckIconsWithPath(string? path)
-        {
-            File.Delete(outputZip);
-            RawMods.PortToLinux(inputZip, outputZip, path, path);
-            if (Directory.Exists(newExtract))
-                Directory.Delete(newExtract, true);
-            ZipFile.ExtractToDirectory(outputZip, newExtract);
-            var newIcon = File.ReadAllBytes(newExtract + "/assets/icon.png");
-            var newSplash = File.ReadAllBytes(newExtract + "/assets/splash.png");
-            Directory.CreateDirectory(libTempDir);
-            var oldIcon = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), path));
-            var oldSplash = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), path));
-
-            Assert.True(newIcon.SequenceEqual(oldIcon));
-            Assert.True(newSplash.SequenceEqual(oldSplash));
-        }
-        
-        CheckIconsWithPath(null);
-        CheckIconsWithPath(inputZip);
     }
     
     #endregion
@@ -459,6 +432,7 @@ public class RawModsTests : IDisposable
                 Assert.True(origFiles.SequenceEqual(newFiles));
                 break;
             }
+            default: throw new Exception("unwritten test case for new os?");
         }
         
         // There should be exactly one subdir here and it should end with .app
@@ -479,12 +453,235 @@ public class RawModsTests : IDisposable
         Assert.True(File.Exists(newExtract + "/" + appDir.Name + "/Contents/Resources/" + deepSuffix.ToLower() + origInput.ToLower()));
     }
     
+    #endregion
+
+    #region PortInvalidZips
+
     [Theory]
-    [InlineData("./GameWin.zip")]
-    [InlineData("./GameLin.zip")]
-    [InlineData("./GameMac.zip")]
-    public void CheckThatMacPortHasProperIcons(string inputZip)
+    [InlineData(Core.ModOS.Windows)]
+    [InlineData(Core.ModOS.Linux)]
+    [InlineData(Core.ModOS.Mac)]
+    [InlineData(Core.ModOS.Android)]
+    public void PortInvalidZipsToOS(Core.ModOS os)
     {
+        Action<string?, string?> function = os switch
+        {
+            Core.ModOS.Windows => (input, outputFile) => RawMods.PortToWindows(input, outputFile),
+            Core.ModOS.Linux => (input, outputFile) => RawMods.PortToLinux(input, outputFile),
+            Core.ModOS.Mac => (input, outputFile) => RawMods.PortToMac(input, outputFile),
+            Core.ModOS.Android => (input, outputFile) => RawMods.PortToAndroid(input, outputFile),
+            _ => throw new Exception("This should not have happened! new unhandled data!")
+        };
+        
+        Assert.Throws<ArgumentNullException>(() => function.Invoke(null, "/foo"));
+        Assert.Throws<FileNotFoundException>(() => function.Invoke("/foo", "/foo"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => function.Invoke("./GameLin.zip", null));
+
+    }
+    
+    #endregion
+    
+    #region PortToAndroid
+    
+    [Theory]
+    [InlineData("./GameWin.zip", false, false, false, false)]
+    [InlineData("./GameLin.zip", false, false, false, false)]
+    [InlineData("./GameMac.zip", false, false, false, false)]
+    [InlineData("./GameWin.zip", true, true, true, true)]
+    [InlineData("./GameLin.zip", true, true, true, true)]
+    [InlineData("./GameMac.zip", true, true, true, true)]
+    public void PortZipToAndroid(string inputZip, bool useSubdirectories, bool createWorkingDirectoryBeforeHand, bool useCustomSave, bool useInternet)
+    {
+        var origMod = RawMods.GetModOSOfRawZip(inputZip);
+        var outputZip = testTempDir + Guid.NewGuid();
+        var origExtract = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        var deepSuffix = "Foobar/Foobar/Foo/Blag/";
+        var origInput = inputZip;
+        
+        if (useSubdirectories)
+        {
+            string archiveDeepSuffix = deepSuffix;
+            if (origMod == Core.ModOS.Linux)
+                archiveDeepSuffix = "assets/" + deepSuffix;
+            else if (origMod == Core.ModOS.Mac)
+                archiveDeepSuffix = "AM2R.app/Contents/Resources/" + deepSuffix;
+            
+            File.Copy(inputZip, testTempDir + inputZip + "_modified");
+            inputZip = testTempDir + inputZip + "_modified";
+            using ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update);
+            archive.CreateEntry(archiveDeepSuffix + origInput);
+        }
+
+        if (createWorkingDirectoryBeforeHand)
+            Directory.CreateDirectory(libTempDir + Path.GetFileNameWithoutExtension(inputZip));
+        
+        RawMods.PortToAndroid(inputZip, outputZip, null, null, useCustomSave, useInternet);
+        
+        // HACK: STORE'd files aren't compressed, thus the compressed size is the same as the normal
+        using (var archive = ZipFile.OpenRead(outputZip))
+        {
+            var entry = archive.GetEntry("assets/coolsong.ogg");
+            Assert.Equal(entry.Length, entry.CompressedLength);
+        }
+
+        ZipFile.ExtractToDirectory(inputZip, origExtract);
+        ZipFile.ExtractToDirectory(outputZip, newExtract);
+        switch (origMod)
+        {
+            case Core.ModOS.Windows:
+            {
+                // File contents should be same between the zips except for all files being lowered now, data file being different, runner+dll not existing now, and splash being new
+                var origFiles = new DirectoryInfo(origExtract).GetFiles().Select(f => f.Name.ToLower()).ToList();
+                origFiles.Remove("am2r.exe");
+                origFiles.Remove("d3dx9_43.dll");
+                origFiles.Remove("data.win");
+                origFiles.Add("game.droid");
+                origFiles.Remove("am2r.exe");
+                origFiles.Add("splash.png");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Linux:
+            {
+                // File contents should be same between the zips except for data file being different
+                var origFiles = new DirectoryInfo(origExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                origFiles.Remove("game.unx");
+                origFiles.Add("game.droid");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            case Core.ModOS.Mac:
+            {
+                // File contents should be the same between the zips except for data file being different and extra mac files
+                var origFiles = new DirectoryInfo(origExtract + "/AM2R.app/Contents/Resources").GetFiles().Select(f => f.Name).ToList();
+                origFiles.Remove("game.ios");
+                origFiles.Add("game.droid");
+                origFiles.Remove("gamecontrollerdb.txt");
+                origFiles.Remove("yoyorunner.config");
+                origFiles.Sort();
+                var newFiles = new DirectoryInfo(newExtract + "/assets").GetFiles().Select(f => f.Name).ToList();
+                newFiles.Sort();
+                Assert.True(origFiles.SequenceEqual(newFiles));
+                break;
+            }
+            default: throw new Exception("unwritten test case for new os?");
+        }
+        
+        // TODO: check save folder - probably needs to be done by decompiling again. If one does this, then the "useInternet" check below should also get redone
+        if (useCustomSave)
+        {
+        }
+        
+        // HACK: ugly af, but works
+        if (useInternet)
+        {
+            Assert.Contains("    a n d r o i d . p e r m i s s i o n ." +
+                            " I N T E R N E T    a n d r o i d ." +
+                            " p e r m i s s i o n . B L U E T O O T H", 
+                            File.ReadAllText(newExtract + "/AndroidManifest.xml"));
+        }
+        
+        // there should be four subdirs in root
+        Assert.Equal(4, new DirectoryInfo(newExtract).GetDirectories().Length);
+        
+        // If we didn't specify any, there should be no subdirectories at the end in asset folder
+        if (!useSubdirectories)
+        {
+            Assert.Empty(new DirectoryInfo(newExtract + "/assets/").GetDirectories());
+            return;
+        }
+        
+        //Otherwise there should be our stuff
+        Assert.True(File.Exists(newExtract + "/assets/" + deepSuffix.ToLower() + origInput.ToLower()));
+        
+        // TODO: check whether final signature is correct?
+    }
+    
+    [Theory]
+    [InlineData("./GameWin.zip", "")]
+    [InlineData("./GameWin.zip", "фыва")]
+    [InlineData("./GameLin.zip", "")]
+    [InlineData("./GameLin.zip", "фыва")]
+    [InlineData("./GameMac.zip", "")]
+    [InlineData("./GameMac.zip", "фыва")]
+    public void HandleInvalidAndroidDisplayNames(string inputZip, string nameToTest)
+    {
+        var origMod = RawMods.GetModOSOfRawZip(inputZip);
+        var outputZip = testTempDir + Guid.NewGuid();
+        
+        string assetFile = "data.win";
+        if (origMod == Core.ModOS.Linux)
+            assetFile = "assets/game.unx";
+        else if (origMod == Core.ModOS.Mac)
+            assetFile = "AM2R.app/Contents/Resources/game.ios";
+            
+        File.Copy(inputZip, testTempDir + inputZip + "_modified");
+        inputZip = testTempDir + inputZip + "_modified";
+        using (ZipArchive archive = ZipFile.Open(inputZip, ZipArchiveMode.Update))
+        {
+            var file = archive.GetEntry(assetFile);
+            var outputFile = testTempDir + Guid.NewGuid();
+            file.ExtractToFile(outputFile);
+            // Read data file and change display name
+            {
+                UndertaleData gmData;
+                using (FileStream fs = new FileInfo(outputFile).OpenRead())
+                {
+                    gmData = UndertaleIO.Read(fs);
+                    var newName = gmData.Strings.MakeString(nameToTest);
+                    gmData.GeneralInfo.DisplayName = newName;
+                }
+
+                using (FileStream fs = new FileInfo(outputFile).OpenWrite())
+                {
+                    UndertaleIO.Write(fs, gmData);
+                }
+            }
+            file.Delete();
+            archive.CreateEntryFromFile(outputFile, assetFile);
+        }
+        Assert.Throws<InvalidDataException>(() => RawMods.PortToAndroid(inputZip, outputZip, null, null, true));
+    }
+    
+    
+    #endregion
+
+    #region Check proper icons after porting
+
+    [Theory]
+    [InlineData("./GameWin.zip", Core.ModOS.Linux)]
+    [InlineData("./GameLin.zip", Core.ModOS.Linux)]
+    [InlineData("./GameMac.zip", Core.ModOS.Linux)]
+    [InlineData("./GameWin.zip", Core.ModOS.Mac)]
+    [InlineData("./GameLin.zip", Core.ModOS.Mac)]
+    [InlineData("./GameMac.zip", Core.ModOS.Mac)]
+    public void CheckThatUnixPortHasProperIcons(string inputZip, Core.ModOS os)
+    {
+        const string icon = "icon.png";
+        const string splash = "splash.png";
+        string assetSuffix;
+        Action<string, string, string?, string?> function;
+
+        switch (os)
+        {
+            case Core.ModOS.Linux:
+                assetSuffix = "/assets/";
+                function = (inp, outp, ic, spl) => RawMods.PortToLinux(inp, outp, ic, spl);
+                break;
+            case Core.ModOS.Mac:
+                assetSuffix = "/AM2R.app/Contents/Resources/";
+                function = (inp, outp, ic, spl) => RawMods.PortToMac(inp, outp, ic, spl);
+                break;
+            default: throw new Exception("was called with unimplemented os");
+        }
+        
         var outputZip = testTempDir + Guid.NewGuid();
         var newExtract = testTempDir + Guid.NewGuid() + "/";
         
@@ -492,12 +689,12 @@ public class RawModsTests : IDisposable
         void CheckIconsWithPath(string? path)
         {
             File.Delete(outputZip);
-            RawMods.PortToMac(inputZip, outputZip, path, path);
+            function.Invoke(inputZip, outputZip, path, path);
             if (Directory.Exists(newExtract))
                 Directory.Delete(newExtract, true);
             ZipFile.ExtractToDirectory(outputZip, newExtract);
-            var newIcon = File.ReadAllBytes(newExtract + "/AM2R.app/Contents/Resources/icon.png");
-            var newSplash = File.ReadAllBytes(newExtract + "/AM2R.app/Contents/Resources/splash.png");
+            var newIcon = File.ReadAllBytes(newExtract + assetSuffix + icon);
+            var newSplash = File.ReadAllBytes(newExtract + assetSuffix + splash);
             Directory.CreateDirectory(libTempDir);
             var oldIcon = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), path));
             var oldSplash = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), path));
@@ -510,43 +707,75 @@ public class RawModsTests : IDisposable
         CheckIconsWithPath(inputZip);
     }
     
-    #endregion
-
-    #region PortInvalidZips
-
-    [Theory]
-    [InlineData(Core.ModOS.Windows)]
-    [InlineData(Core.ModOS.Linux)]
-    [InlineData(Core.ModOS.Mac)]
-    public void PortInvalidZipsToOS(Core.ModOS os)
+    // TODO: see skip reason
+    [Theory(Skip = "Currently buggy, due to probably an apktool bug.")]
+    [InlineData("./GameWin.zip")]
+    [InlineData("./GameLin.zip")]
+    [InlineData("./GameMac.zip")]
+    public void CheckThatAndroidHasProperIcons(string inputZip)
     {
-        Action<string?, string?> function = os switch
+        const string splash = "splash.png";
+        string assetSuffix = "/assets/";
+        Dictionary<string, int> resPaths = new Dictionary<string, int>
         {
-            Core.ModOS.Windows => (input, outputFile) => RawMods.PortToWindows(input, outputFile),
-            Core.ModOS.Linux => (input, outputFile) => RawMods.PortToLinux(input, outputFile),
-            Core.ModOS.Mac => (input, outputFile) => RawMods.PortToMac(input, outputFile),
-            _ => throw new Exception("This should not have happened! new unhandled data!")
+            {"/res/drawable/icon.png", 96},
+            {"/res/drawable-hdpi-v4/icon.png", 72},
+            {"/res/drawable-ldpi-v4/icon.png", 36},
+            {"/res/drawable-mdpi-v4/icon.png", 48},
+            {"/res/drawable-xhdpi-v4/icon.png", 96},
+            {"/res/drawable-xxhdpi-v4/icon.png", 144},
+            {"/res/drawable-xxxhdpi-v4/icon.png", 192}
         };
         
-        Assert.Throws<ArgumentNullException>(() => function.Invoke(null, "/foo"));
-        Assert.Throws<FileNotFoundException>(() => function.Invoke("/foo", "/foo"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => function.Invoke("./GameLin.zip", null));
+        var outputZip = testTempDir + Guid.NewGuid();
+        var newExtract = testTempDir + Guid.NewGuid() + "/";
+        
+        // With default icons
+        void CheckIconsWithPath(string? path)
+        {
+            File.Delete(outputZip);
+            RawMods.PortToAndroid(inputZip, outputZip, path, path);
+            if (Directory.Exists(newExtract))
+                Directory.Delete(newExtract, true);
+            ZipFile.ExtractToDirectory(outputZip, newExtract);
+            var newSplash = File.ReadAllBytes(newExtract + assetSuffix + splash);
+            Directory.CreateDirectory(libTempDir);
+            var oldSplash = File.ReadAllBytes(RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), path));
+            Assert.True(newSplash.SequenceEqual(oldSplash));
+            foreach (var kvp in resPaths)
+            {
+                var sizedPath = testTempDir + "/" + Guid.NewGuid() +".png";
+                var newIcon = File.ReadAllBytes(newExtract + kvp.Key);
+                var oldIconPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), path);
+                
+                HelperMethods.SaveAndroidIcon(oldIconPath, kvp.Value, sizedPath);
+                var oldIcon = File.ReadAllBytes(sizedPath);
+                Assert.True(newIcon.SequenceEqual(oldIcon));
+            }
 
+        }
+        
+        CheckIconsWithPath(null);
+        CheckIconsWithPath(inputZip);
     }
+    
     #endregion
-
+    
     #region Make sure porting methods work when called in succession
-
+    
     [Theory]
     [InlineData("./GameWin.zip", Core.ModOS.Windows)]
     [InlineData("./GameWin.zip", Core.ModOS.Linux)]
     [InlineData("./GameWin.zip", Core.ModOS.Mac)]
+    [InlineData("./GameWin.zip", Core.ModOS.Android)]
     [InlineData("./GameLin.zip", Core.ModOS.Windows)]
     [InlineData("./GameLin.zip", Core.ModOS.Linux)]
     [InlineData("./GameLin.zip", Core.ModOS.Mac)]
+    [InlineData("./GameLin.zip", Core.ModOS.Android)]
     [InlineData("./GameMac.zip", Core.ModOS.Windows)]
     [InlineData("./GameMac.zip", Core.ModOS.Linux)]
     [InlineData("./GameMac.zip", Core.ModOS.Mac)]
+    [InlineData("./GameMac.zip", Core.ModOS.Android)]
     public void TestPortToOSMultipleTimes(string input, Core.ModOS os)
     {
         Action<string?, string?> function = os switch
@@ -554,6 +783,7 @@ public class RawModsTests : IDisposable
             Core.ModOS.Windows => (inputFile, outputFile) => RawMods.PortToWindows(inputFile, outputFile),
             Core.ModOS.Linux => (inputFile, outputFile) => RawMods.PortToLinux(inputFile, outputFile),
             Core.ModOS.Mac => (inputFile, outputFile) => RawMods.PortToMac(inputFile, outputFile),
+            Core.ModOS.Android => (inputFile, outputFile) => RawMods.PortToAndroid(inputFile, outputFile), 
             _ => throw new Exception("This should not have happened! new unhandled data!")
         };
         
@@ -566,6 +796,4 @@ public class RawModsTests : IDisposable
     }
     
     #endregion
-    
-    // TODO: write tests for porttoandroid
 }

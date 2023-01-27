@@ -65,7 +65,7 @@ public static class HelperMethods
             DirectoryCopy(subDir.FullName, tempPath);
         }
     }
-    
+
     /// <summary>
     /// Loads an <see cref="Image"/> via filepath, resizes it via Nearest Neighbor to a specified dimension, and then saves it to a specified path.
     /// </summary>
@@ -80,12 +80,12 @@ public static class HelperMethods
     /// </example>
     public static void SaveAndroidIcon(string iconPath, int dimensions, string filePath)
     {
-        Image picture = Image.Load(iconPath);
         // Most am2r cover is pixelart, hence why NN is used. Hermite would probably be a decent alternative too though.
+        using Image picture = Image.Load(iconPath);
         picture.Mutate(x => x.Resize(dimensions, dimensions, KnownResamplers.NearestNeighbor));
         picture.SaveAsPng(filePath);
     }
-    
+
     /// <summary>
     /// Calculates the SHA256 hash of a specified file.
     /// </summary>

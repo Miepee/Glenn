@@ -23,6 +23,7 @@ public static class Core
     {
         Windows,
         Linux,
-        Mac
+        Mac,
+        Android
     }
 }

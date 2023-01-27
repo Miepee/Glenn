@@ -354,12 +354,12 @@ public abstract class RawMods : ModsBase
                     UndertaleData gmData = UndertaleIO.Read(fs, outputDelegate.SendOutput, outputDelegate.SendOutput);
                     modName = gmData.GeneralInfo.DisplayName.Content;
                 }
-                modName = modName.Replace(" ", "").Replace(":", "");
+                modName = modName.Replace(" ", "").Replace(":", "").Replace(".", "");
                 
                 // rules for name: A-Z, a-z, digits, underscore and needs to start with letters
                 Regex nameReg = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*$");
                 if (!nameReg.Match(modName).Success)
-                    throw new InvalidDataException("The display name " + modName + " is invalid! The name has to start with letters (a-z), and can only contain letters, digits, space, colon and underscore!");
+                    throw new InvalidDataException("The display name \"" + modName + "\" is invalid! The name has to start with letters (a-z/A-Z), and can only contain letters, digits, space, colon and underscore!");
                 
                 outputDelegate.SendOutput("Replace Android save directory...");
                 
