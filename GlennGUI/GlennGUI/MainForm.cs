@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using GlennLib;
 using Eto.Forms;
 using Eto.Drawing;
+using ResourcesLib = GlennLib.Resources;
 
 namespace GlennGUI;
 
@@ -23,8 +24,8 @@ public partial class MainForm : Form
         
         return nameOfResource switch
         {
-            nameof(Resources.icon) => Resources.icon,
-            nameof(Resources.splash) => Resources.splash,
+            nameof(ResourcesLib.icon) => ResourcesLib.icon,
+            nameof(ResourcesLib.splash) => ResourcesLib.splash,
             _ => throw new InvalidDataException("Invalid Resource name given!")
         };
     }
@@ -33,6 +34,8 @@ public partial class MainForm : Form
     {
         Title = $"Glenn - v{Core.Version}";
         MinimumSize = new Size(260, 280);
+        
+        Icon = new Icon(1f, new Bitmap(Resources.applicationIcon));
         
         var mainLayout = new DynamicLayout() {Padding = 10};
         mainLayout.BeginVertical();
@@ -119,12 +122,12 @@ public partial class MainForm : Form
 
     private void ButtonEditSplashClick(object sender, EventArgs e)
     {
-        ButtonEditResourceClick(imageViewSplash, nameof(Resources.splash));
+        ButtonEditResourceClick(imageViewSplash, nameof(ResourcesLib.splash));
     }
     
     private void ButtonEditIconClick(object sender, EventArgs e)
     {
-        ButtonEditResourceClick(imageViewIcon, nameof(Resources.icon));
+        ButtonEditResourceClick(imageViewIcon, nameof(ResourcesLib.icon));
     }
     
     private async void ButtonPortOnClick(object sender, EventArgs e)
@@ -140,8 +143,8 @@ public partial class MainForm : Form
         string androidPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_ANDROID.apk";
         string macPath = $"{currentDir}/{Path.GetFileNameWithoutExtension(modZipPath)}_MACOS.zip";
 
-        string iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), userIconPath);
-        string splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.splash), userSplashPath);
+        string iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(ResourcesLib.icon), userIconPath);
+        string splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(ResourcesLib.splash), userSplashPath);
 
         try
         {
@@ -228,8 +231,8 @@ public partial class MainForm : Form
 
         string destName = nameOfResource switch
         {
-            nameof(Resources.icon) => userIconPath,
-            nameof(Resources.splash) => userSplashPath,
+            nameof(ResourcesLib.icon) => userIconPath,
+            nameof(ResourcesLib.splash) => userSplashPath,
             _ => throw new Exception("You dun goofed!")
         };
         
@@ -295,7 +298,7 @@ public partial class MainForm : Form
     
     private readonly ImageView imageViewIcon = new ImageView
     {
-        Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.icon))),
+        Image = new Bitmap(GetByteArrayFromResource(nameof(ResourcesLib.icon))),
         Size = new Size(64, 64)
     };
     private readonly Button buttonEditIcon = new Button
@@ -305,7 +308,7 @@ public partial class MainForm : Form
     
     private readonly ImageView imageViewSplash = new ImageView
     {
-        Image = new Bitmap(GetByteArrayFromResource(nameof(Resources.splash))),
+        Image = new Bitmap(GetByteArrayFromResource(nameof(ResourcesLib.splash))),
         Size = new Size(128, 96),
     };
     private readonly Button buttonEditSplash = new Button
