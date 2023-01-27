@@ -11,8 +11,6 @@ using static GlennLib.Core;
 
 namespace GlennLib;
 
-// TODO: rebrand
-
 public abstract class RawMods : ModsBase
 {
     // For completionist sake, it should be possible to also port raw APKs to win/lin/mac
