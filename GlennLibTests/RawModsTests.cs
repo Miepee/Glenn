@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using GlennLib;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using UndertaleModLib;
 using Xunit;
 using Xunit.Abstractions;
@@ -705,8 +707,7 @@ public class RawModsTests : IDisposable
         CheckIconsWithPath(inputZip);
     }
     
-    // TODO: see skip reason
-    [Theory(Skip = "Currently buggy, due to probably an apktool bug.")]
+    [Theory]
     [InlineData("./GameWin.zip")]
     [InlineData("./GameLin.zip")]
     [InlineData("./GameMac.zip")]
@@ -727,6 +728,7 @@ public class RawModsTests : IDisposable
         
         var outputZip = testTempDir + Guid.NewGuid();
         var newExtract = testTempDir + Guid.NewGuid() + "/";
+        var recoloredIcon = testTempDir + Guid.NewGuid();
         
         // With default icons
         void CheckIconsWithPath(string? path)
@@ -754,7 +756,13 @@ public class RawModsTests : IDisposable
         }
         
         CheckIconsWithPath(null);
-        CheckIconsWithPath(inputZip);
+        var imagePath = RawMods.GetProperPathToBuiltinIcons(nameof(Resources.icon), null);
+        using (Image img = Image.Load(imagePath))
+        {
+            img.Mutate(c => c.Hue(180));
+            img.SaveAsPng(recoloredIcon);
+        }
+        CheckIconsWithPath(recoloredIcon);
     }
     
     #endregion

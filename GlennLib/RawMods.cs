@@ -407,7 +407,8 @@ public abstract class RawMods : ModsBase
         pStartInfo = new ProcessStartInfo
         {
             FileName = bin,
-            Arguments = args + "\"" + apktool + "\" b \"" + apkDir + "\" -o \"" + extractDirectory + "/build.apk" + "\"",
+            // Use aapt2 and nc are to ensure that aapt doesn't preprocess images before using then. Needed for tests.
+            Arguments = args + "\"" + apktool + "\" b \"" + apkDir + "\" -o \"" + extractDirectory + "/build.apk" + "\" --use-aapt2 -nc ",
             CreateNoWindow = true
         };
         p = new Process { StartInfo = pStartInfo };
