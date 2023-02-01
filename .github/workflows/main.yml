@@ -58,14 +58,17 @@ jobs:
           - os: ubuntu-latest
             COMMAND: GlennGUI.Gtk.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r linux-x64 --no-self-contained
             ARTIFACT: GlennGUI.Gtk/bin/Release/net6.0/linux-x64/publish/
+            POSTBUILD: echo "nothing to do"
             DIR: GlennGUI.Gtk
           - os: macOS-latest
-            COMMAND: GlennGUI.Mac.csproj -r osx-x64 --self-contained
-            ARTIFACT: GlennGUI.Mac/bin/Release/net6.0/osx-x64/publish
+            COMMAND: GlennGUI.Mac.csproj -o builds/macOS-latest
+            ARTIFACT: builds/macOS-latest
+            POSTBUILD: rm -r builds/macOS-latest/* && mv GlennGUI.Mac/bin/Release/net6.0-macos/GlennGUI.Mac.app builds/macOS-latest/GlennGUI.Mac.app
             DIR: GlennGUI.Mac
           - os: windows-latest
             COMMAND: GlennGUI.Wpf.csproj -p:PublishSingleFile=true -p:DebugType=embedded -r win-x86 --no-self-contained
             ARTIFACT: GlennGUI.Wpf\bin\Release\net6.0-windows\win-x86\publish
+            POSTBUILD: echo "nothing to do"
             DIR: GlennGUI.Wpf
     runs-on: ${{ matrix.os }}
     
@@ -78,12 +81,18 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
+    - name: Install Mac workload 
+      working-directory: ./GlennGUI/${{ matrix.DIR }}
+      run: dotnet workload install macos
     - name: Restore dependencies
       working-directory: ./GlennGUI/${{ matrix.DIR }}
       run: dotnet restore
     - name: Build
       working-directory: ./GlennGUI/${{ matrix.DIR }}
       run: dotnet publish ${{ matrix.COMMAND }} -c "${{ matrix.configuration }}" /p:WarningLevel=3
+    - name: Post-Build
+      run: |
+          ${{ matrix.POSTBUILD }}
     # Steps for uploading artifacts.
     - name: Zip to Archive
       run: 7z a -tzip ${{ matrix.os }}.zip ./GlennGUI/${{ matrix.ARTIFACT }}
