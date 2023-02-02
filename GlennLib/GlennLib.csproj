@@ -13,14 +13,58 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="utils/**">
+        <!--<Content Include="utils/**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
+        </Content>-->
     </ItemGroup>
 
     <ItemGroup>
       <Content Include="..\LICENSE">
         <Link>LICENSE</Link>
+      </Content>
+      <None Remove="utils\apktool-LICENSE" />
+      <Content Include="utils\apktool-LICENSE">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\AM2RWrapper.apk" />
+      <Content Include="utils\AM2RWrapper.apk">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\apktool.jar" />
+      <Content Include="utils\apktool.jar">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\D3DX9_43.dll" />
+      <Content Include="utils\D3DX9_43.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\executable.exe" />
+      <Content Include="utils\executable.exe">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\linuxRunner.xdelta" />
+      <Content Include="utils\linuxRunner.xdelta">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\macRunner.xdelta" />
+      <Content Include="utils\macRunner.xdelta">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\runner" />
+      <Content Include="utils\runner">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\uber-apk-signer.jar" />
+      <Content Include="utils\uber-apk-signer.jar">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\uber-apk-signer-LICENSE" />
+      <Content Include="utils\uber-apk-signer-LICENSE">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\windowsRunner.xdelta" />
+      <Content Include="utils\windowsRunner.xdelta">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
 
