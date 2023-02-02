@@ -62,7 +62,7 @@ jobs:
             DIR: GlennGUI.Gtk
           - os: macOS-latest
             COMMAND: GlennGUI.Mac.csproj -o builds/macOS-latest
-            ARTIFACT: builds/macOS-latest
+            ARTIFACT: GlennGUI/GlennGUI.MAC/builds/macOS-latest
             POSTBUILD: rm -r builds/macOS-latest/* && mv GlennGUI.Mac/bin/Release/net6.0-macos/GlennGUI.Mac.app builds/macOS-latest/GlennGUI.Mac.app
             DIR: GlennGUI.Mac
           - os: windows-latest
