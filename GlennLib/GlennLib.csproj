@@ -66,6 +66,38 @@
       <Content Include="utils\windowsRunner.xdelta">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+      <None Remove="utils\Contents\PkgInfo" />
+      <Content Include="utils\Contents\PkgInfo">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\Info.plist" />
+      <Content Include="utils\Contents\Info.plist">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\MacOS\Mac_Runner" />
+      <Content Include="utils\Contents\MacOS\Mac_Runner">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\Frameworks\libYoYoIAP.dylib" />
+      <Content Include="utils\Contents\Frameworks\libYoYoIAP.dylib">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\Frameworks\libYoYoGamepad.dylib" />
+      <Content Include="utils\Contents\Frameworks\libYoYoGamepad.dylib">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\Resources\yoyorunner.config" />
+      <Content Include="utils\Contents\Resources\yoyorunner.config">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\Resources\gamecontrollerdb.txt" />
+      <Content Include="utils\Contents\Resources\gamecontrollerdb.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="utils\Contents\Resources\English.lproj\MainMenu.nib" />
+      <Content Include="utils\Contents\Resources\English.lproj\MainMenu.nib">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <ItemGroup>
