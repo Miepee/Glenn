@@ -3,13 +3,12 @@ Glenn is a tool to make porting builds of self-created AM2R Mods to other platfo
 You need to have at least .NET Core 6 installed in order to run this.
  
 ## How do I use this?
-First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created. If you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just feed it into this tool and, select if you want to have a port made for Linux, Android or Mac.  
+First you need a zip of the self-created mod. If you're using GameMaker: Studio, you can just use the zip it created. If you're using UndertaleModTool you need to zip the files first (your files should not be in a subfolder in the zip!). After that, just feed it into this tool and, select if you want to have a port made for Windows, Linux, Android or Mac.  
 It will then create a new zip/apk in the directory next to the program, which can be used for [Atomic](https://github.com/AM2R-Community-Developers/Atomic).  
 
 To create Android builds, you need to have Java installed.
 
-By default, the ports will use stock splash and icon images. *It is recommended to replace `icon.png`, `splash.png` and `splashAndroid.png` in the `utils` folder with your own*.
-
+By default, the ports will use stock splash and icon images, however you are able to change those.
 ## Porting notes
 - Keep Game Maker: Studio documentation in mind, using any functions that only work on one OS or function differently on different OS could lead to the ports having unexpected behaviour or even crashing.
 - Use `/` for folder seperation, instead of `\`. `\` only works on Windows, `/` works on every OS.
