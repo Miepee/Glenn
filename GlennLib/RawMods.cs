@@ -1,14 +1,11 @@
-using System.Data;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.RegularExpressions;
-using SixLabors.ImageSharp;
 using UndertaleModLib;
 using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
-using static GlennLib.Core;
 
 namespace GlennLib;
 
