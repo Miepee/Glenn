@@ -608,10 +608,13 @@ public class RawModsTests : IDisposable
     [Theory]
     [InlineData("./GameWin.zip", "")]
     [InlineData("./GameWin.zip", "фыва")]
+    [InlineData("./GameWin.zip", "AM2R")]
     [InlineData("./GameLin.zip", "")]
     [InlineData("./GameLin.zip", "фыва")]
+    [InlineData("./GameLin.zip", "AM2R")]
     [InlineData("./GameMac.zip", "")]
     [InlineData("./GameMac.zip", "фыва")]
+    [InlineData("./GameMac.zip", "AM2R")]
     public void HandleInvalidAndroidDisplayNames(string inputZip, string nameToTest)
     {
         var origMod = RawMods.GetModOSOfRawZip(inputZip);

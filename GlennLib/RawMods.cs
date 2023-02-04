@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
@@ -244,7 +245,8 @@ public abstract class RawMods : ModsBase
     /// If this is <see langword="null"/>, a default stock splash screen is used.</param>
     /// <param name="outputDelegate">A delegate to post output info to.</param>
     /// <exception cref="NotSupportedException">The raw mod zip was made for an OS that can't be determined.</exception>
-    /// <exception cref="InvalidDataException"><paramref name="useCustomSaveDirectory"/> was given, but the display name of the mod is unsuitable as a name for the directory.</exception>
+    /// <exception cref="InvalidDataException"><paramref name="useCustomSaveDirectory"/> was given, but the display name of the mod is unsuitable as a name for the directory.
+    ///  - or - <paramref name="useCustomSaveDirectory"/> was given, but the display name is the same as vanilla AM2R ("AM2R").</exception>
     public static void PortToAndroid(string inputRawZipPath, string outputRawApkPath, string pathToIcon = null, string pathToSplashScreen = null, 
                                      bool useCustomSaveDirectory = false, bool usesInternet = false, OutputHandlerDelegate outputDelegate = null)
     {
@@ -353,6 +355,11 @@ public abstract class RawMods : ModsBase
                     modName = gmData.GeneralInfo.DisplayName.Content;
                 }
                 modName = modName.Replace(" ", "").Replace(":", "").Replace(".", "");
+                modName = modName.Replace("-", "_");
+                
+                // throw if name is vanilla
+                if (modName == "AM2R")
+                    throw new InvalidDataException("The display name cannot be " + modName + ", as that's the same as vanilla AM2R and would cause it to not have custom saves!");
                 
                 // rules for name: A-Z, a-z, digits, underscore and needs to start with letters
                 Regex nameReg = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*$");
