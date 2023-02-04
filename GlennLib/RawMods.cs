@@ -106,7 +106,7 @@ public abstract class RawMods : ModsBase
             return;
         }
         
-        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        string extractDirectory = TempDir + "/" + Guid.NewGuid();
 
         // Check if temp folder exists, delete if yes, extract zip to there
         if (Directory.Exists(extractDirectory))
@@ -167,7 +167,7 @@ public abstract class RawMods : ModsBase
         Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
-        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        string extractDirectory = TempDir + "/" + Guid.NewGuid();
         string assetsDir = extractDirectory + "/assets";
         
         // Check if temp folder exists, delete if yes, extract zip to there
@@ -252,7 +252,7 @@ public abstract class RawMods : ModsBase
         Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
-        string extractDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        string extractDirectory = TempDir + "/" + Guid.NewGuid();
         string apkDir = extractDirectory + "/apk";
         string apkAssetsDir = apkDir + "/assets";
         string bin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "java";
@@ -457,7 +457,7 @@ public abstract class RawMods : ModsBase
         Core.ModOS currentOS = GetModOSOfRawZip(inputRawZipPath);
         outputDelegate.SendOutput("Zip Recognized as " + currentOS);
         
-        string baseTempDirectory = TempDir + "/" + Path.GetFileNameWithoutExtension(inputRawZipPath);
+        string baseTempDirectory = TempDir + "/" + Guid.NewGuid();
         string extractDirectory = baseTempDirectory + "/extract";
         string appDirectory = baseTempDirectory + "/AM2R.app";
         string contentsDir = baseTempDirectory + "/Contents";
