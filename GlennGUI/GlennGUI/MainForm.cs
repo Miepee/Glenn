@@ -146,6 +146,7 @@ public partial class MainForm : Form
         string iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(ResourcesLib.icon), userIconPath);
         string splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(ResourcesLib.splash), userSplashPath);
 
+        // TODO: handle when porting methods throw exception
         try
         {
             if (checkboxWindows.Checked.Value)
