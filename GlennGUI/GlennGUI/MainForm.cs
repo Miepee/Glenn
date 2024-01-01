@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using GlennLib;
@@ -146,6 +147,21 @@ public partial class MainForm : Form
         string iconPath = RawMods.GetProperPathToBuiltinIcons(nameof(ResourcesLib.icon), userIconPath);
         string splashPath = RawMods.GetProperPathToBuiltinIcons(nameof(ResourcesLib.splash), userSplashPath);
 
+        bool checkIfOutputIsValid(string pathToZip)
+        {
+            bool errorThrown = false;
+            try
+            {
+                ZipFile.OpenRead(pathToZip);
+            }
+            catch (Exception)
+            {
+                errorThrown = true;
+            }
+
+            return errorThrown;
+        }
+        
         // TODO: handle when porting methods throw exception
         try
         {
@@ -155,6 +171,11 @@ public partial class MainForm : Form
                     File.Delete(windowsPath);
 
                 await Task.Run(() => RawMods.PortToWindows(modZipPath, windowsPath, OutputHandlerDelegate));
+                if (!checkIfOutputIsValid(windowsPath))
+                {
+                    MessageBox.Show(this, "The Windows port output somehow got corrupted. Deleting file.", "Error", MessageBoxType.Error);
+                    File.Delete(windowsPath);
+                }
             }
             if (checkboxLinux.Checked.Value)
             {
@@ -162,6 +183,11 @@ public partial class MainForm : Form
                     File.Delete(linuxPath);
 
                 await Task.Run(() => RawMods.PortToLinux(modZipPath, linuxPath, iconPath, splashPath, OutputHandlerDelegate));
+                if (!checkIfOutputIsValid(linuxPath))
+                {
+                    MessageBox.Show(this, "The Linux port output somehow got corrupted. Deleting file.", "Error", MessageBoxType.Error);
+                    File.Delete(windowsPath);
+                }
             }
             if (checkboxAndroid.Checked.Value)
             {
@@ -178,6 +204,11 @@ public partial class MainForm : Form
                     File.Delete(macPath);
                 
                 await Task.Run(() => RawMods.PortToMac(modZipPath, macPath, iconPath, splashPath, OutputHandlerDelegate));
+                if (!checkIfOutputIsValid(macPath))
+                {
+                    MessageBox.Show(this, "The Mac port output somehow got corrupted. Deleting file.", "Error", MessageBoxType.Error);
+                    File.Delete(windowsPath);
+                }
             }
 
             labelProgress.Text = "Done!";
