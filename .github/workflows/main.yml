@@ -115,7 +115,7 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Install Mac workload 
-      run: dotnet workload install macos
+      run: dotnet workload install macos && dotnet workload restore
     - name: Restore dependencies
       working-directory: ./GlennLibTests/
       run: dotnet restore
