@@ -602,7 +602,7 @@ public abstract class RawMods : ModsBase
             throw new NotSupportedException("Bytecode 14 is not supported.");
         if (bcVersion == 17)
             throw new NotSupportedException("Bytecode 17 is not supported.");
-        if (!((Data.GMS2_3 == false) && (Data.GMS2_3_1 == false) && (Data.GMS2_3_2 == false)))
+        if (Data.IsVersionAtLeast(2, 3))
             throw new NotSupportedException("GMS 2.3+ is not supported.");
         if (bcVersion != 14 && bcVersion != 15 && bcVersion != 16)
             throw new NotSupportedException("Unknown Bytecode version!");
