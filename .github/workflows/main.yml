@@ -44,7 +44,7 @@ jobs:
     - name: Zip to Archive
       run: 7z a -tzip ${{ matrix.os }}.zip ./${{ matrix.ARTIFACT }}
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4.6.1
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: CLI-${{ matrix.os }}
         path: ${{ matrix.os }}.zip
@@ -98,7 +98,7 @@ jobs:
     - name: Zip to Archive
       run: 7z a -tzip ${{ matrix.os }}.zip ./GlennGUI/${{ matrix.ARTIFACT }}
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4.6.1
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: GUI-${{ matrix.os }}
         path: ${{ matrix.os }}.zip
